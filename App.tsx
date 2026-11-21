@@ -27,6 +27,7 @@ import ProfileScreen from './src/screens/ProfileScreen';
 import CreateTaskModal from './src/components/CreateTaskModal';
 import TaskDetailModal from './src/components/TaskDetailModal';
 import ConfirmModal from './src/components/ConfirmModal';
+import SidebarDrawer from './src/components/SidebarDrawer';
 
 type TabKey = 'home' | 'tasks' | 'projects' | 'profile';
 
@@ -46,6 +47,7 @@ export default function App() {
   const [createVisible, setCreateVisible] = useState(false);
   const [createInitialMode, setCreateInitialMode] = useState<'single' | 'ai_plan'>('single');
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -389,6 +391,13 @@ export default function App() {
         {/* Top App Bar */}
         <View style={styles.topBar}>
           <View style={styles.brandRow}>
+            <TouchableOpacity
+              style={styles.menuBtn}
+              onPress={() => setSidebarOpen(true)}
+              accessibilityLabel="Open sidebar menu"
+            >
+              <Ionicons name="menu-outline" size={20} color={COLORS.textPrimary} />
+            </TouchableOpacity>
             <View style={styles.brandIcon}>
               <Ionicons name="checkmark-done" size={16} color={COLORS.cyan} />
             </View>
@@ -596,6 +605,54 @@ export default function App() {
           onConfirm={confirmState.onConfirm}
           onCancel={() => setConfirmState((s) => ({ ...s, visible: false }))}
         />
+
+        <SidebarDrawer
+          visible={sidebarOpen}
+          user={user}
+          activeTab={activeTab}
+          activeQueue={activeQueue}
+          selectedProjectId={selectedProjectId}
+          tasks={tasks}
+          projects={projects}
+          folders={folders}
+          syncStatus={syncStatus}
+          onClose={() => setSidebarOpen(false)}
+          onSelectTab={(tab) => setActiveTab(tab)}
+          onSelectQueue={(queue) => {
+            setActiveQueue(queue);
+            setActiveTab('tasks');
+          }}
+          onSelectProject={(pid) => {
+            setSelectedProjectId(pid);
+            setActiveQueue('all');
+            setActiveTab('tasks');
+          }}
+          onOpenCreate={(mode) => {
+            setCreateInitialMode(mode);
+            setCreateVisible(true);
+          }}
+          onRefreshSync={() => {
+            void loadWorkspaceData(true);
+            showToast('Synced with backend');
+          }}
+          onRequestLogout={() => {
+            setConfirmState({
+              visible: true,
+              title: 'Sign Out',
+              message: 'Sign out of your TaskFlow workspace?',
+              confirmLabel: 'Sign Out',
+              onConfirm: async () => {
+                setConfirmState((s) => ({ ...s, visible: false }));
+                await clearSession();
+                syncFingerprintRef.current = '';
+                setTasks([]);
+                setProjects([]);
+                setFolders([]);
+                setUser(null);
+              },
+            });
+          }}
+        />
       </SafeAreaView>
     </SafeAreaProvider>
   );
@@ -626,6 +683,17 @@ const styles = StyleSheet.create({
     borderBottomColor: COLORS.borderSubtle,
   },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  menuBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: COLORS.card,
+    borderWidth: 1,
+    borderColor: COLORS.borderSubtle,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 2,
+  },
   brandIcon: {
     width: 28,
     height: 28,
