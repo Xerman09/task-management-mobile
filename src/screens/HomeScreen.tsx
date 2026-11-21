@@ -321,3 +321,4 @@ const styles = StyleSheet.create({
   stepText: { flex: 1, fontSize: 12, color: COLORS.textSecondary },
   stepTextDone: { textDecorationLine: 'line-through', color: COLORS.textMuted },
 });
+

@@ -36,3 +36,4 @@ export const DEFAULT_STATUS_COLUMNS = [
   { id: 'review', label: 'In Review', color: '#6366f1', isCompleted: false },
   { id: 'completed', label: 'Completed', color: '#10b981', isCompleted: true },
 ] as const;
+

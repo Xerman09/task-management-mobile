@@ -622,3 +622,4 @@ const styles = StyleSheet.create({
   },
   submitBtnText: { fontSize: 13, fontWeight: '800', color: '#09090b' },
 });
+
