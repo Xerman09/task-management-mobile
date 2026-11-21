@@ -42,9 +42,11 @@ export default function HomeScreen({
   );
   const focusTasks = [...overdueTasks, ...dueTodayTasks].slice(0, 6);
 
-  const { xp, level, levelPct, rankTitle, perfectDays } = useMemo(() => {
+  const { xp, level, levelPct, xpInLevel, rankTitle, perfectDays } = useMemo(() => {
     const byDay: Record<string, { total: number; done: number }> = {};
+    let doneStepsCount = 0;
     for (const t of tasks) {
+      doneStepsCount += t.subtasks.filter((s) => s.is_completed).length;
       if (!t.due_date) continue;
       if (!byDay[t.due_date]) byDay[t.due_date] = { total: 0, done: 0 };
       byDay[t.due_date].total += 1;
@@ -54,9 +56,10 @@ export default function HomeScreen({
     for (const d of Object.values(byDay)) {
       if (d.total > 0 && d.done === d.total) perf += 1;
     }
-    const totalXp = completed * 25 + perf * 50;
+    const totalXp = completed * 25 + doneStepsCount * 5 + perf * 50;
     const lvl = Math.floor(totalXp / 250) + 1;
-    const pct = Math.round(((totalXp % 250) / 250) * 100);
+    const inLvl = totalXp % 250;
+    const pct = Math.round((inLvl / 250) * 100);
     const rank =
       lvl >= 10
         ? 'Flow Legend'
@@ -65,7 +68,14 @@ export default function HomeScreen({
           : lvl >= 3
             ? 'Focus Knight'
             : 'Task Apprentice';
-    return { xp: totalXp, level: lvl, levelPct: pct, rankTitle: rank, perfectDays: perf };
+    return {
+      xp: totalXp,
+      level: lvl,
+      levelPct: pct,
+      xpInLevel: inLvl,
+      rankTitle: rank,
+      perfectDays: perf,
+    };
   }, [tasks, completed]);
 
   return (
@@ -77,20 +87,51 @@ export default function HomeScreen({
             <View style={styles.levelBadgeRow}>
               <View style={styles.levelPill}>
                 <Ionicons name="trophy" size={11} color={colors.amber} />
-                <Text style={styles.levelPillText}>
-                  LV.{level} • {rankTitle.toUpperCase()}
-                </Text>
+                <Text style={styles.levelPillText}>{rankTitle.toUpperCase()}</Text>
               </View>
               <Text style={styles.xpText}>{xp} XP</Text>
             </View>
             <Text style={styles.greeting}>Welcome back, {user.name.split(' ')[0]}</Text>
-            <Text style={styles.heroSummary}>
-              {dueTodayTasks.length} due today • {overdueTasks.length} overdue • {perfectDays} perfect days
+          </View>
+
+          <View style={styles.levelCrest}>
+            <Text style={styles.levelCrestLabel}>LEVEL</Text>
+            <Text style={styles.levelCrestNum}>{level}</Text>
+          </View>
+        </View>
+
+        {/* Scannable Status Pills */}
+        <View style={styles.heroChipsRow}>
+          <View style={styles.heroChip}>
+            <Ionicons name="sunny" size={12} color={colors.amber} />
+            <Text style={styles.heroChipText}>{dueTodayTasks.length} Due Today</Text>
+          </View>
+          <View
+            style={[
+              styles.heroChip,
+              overdueTasks.length > 0 && {
+                backgroundColor: colors.roseSoft,
+                borderColor: 'rgba(239, 68, 68, 0.35)',
+              },
+            ]}
+          >
+            <Ionicons
+              name="flame"
+              size={12}
+              color={overdueTasks.length > 0 ? colors.rose : colors.textMuted}
+            />
+            <Text
+              style={[
+                styles.heroChipText,
+                overdueTasks.length > 0 && { color: '#fca5a5' },
+              ]}
+            >
+              {overdueTasks.length} Overdue
             </Text>
           </View>
-          <View style={styles.heroPctBadge}>
-            <Text style={styles.heroPctValue}>{todayAllTasks.length > 0 ? todayPct : completionPct}%</Text>
-            <Text style={styles.heroPctLabel}>{todayAllTasks.length > 0 ? 'TODAY' : 'DONE'}</Text>
+          <View style={styles.heroChip}>
+            <Ionicons name="star" size={12} color={colors.emerald} />
+            <Text style={styles.heroChipText}>{perfectDays} Perfect</Text>
           </View>
         </View>
 
@@ -100,9 +141,14 @@ export default function HomeScreen({
             <Text style={styles.barLabel}>
               {todayAllTasks.length > 0
                 ? `Today's Quest (${todayDone}/${todayAllTasks.length})`
-                : `Workspace Progress (${completed}/${total})`}
+                : `Workspace Quest (${completed}/${total})`}
             </Text>
-            <Text style={[styles.barVal, todayPct === 100 && todayAllTasks.length > 0 && { color: colors.emerald }]}>
+            <Text
+              style={[
+                styles.barVal,
+                todayPct === 100 && todayAllTasks.length > 0 && { color: colors.emerald },
+              ]}
+            >
               {todayAllTasks.length > 0
                 ? todayPct === 100
                   ? 'Perfect Day! +50 XP'
@@ -124,14 +170,14 @@ export default function HomeScreen({
           </View>
 
           <View style={[styles.barHeaderRow, { marginTop: 4 }]}>
-            <Text style={styles.barLabel}>Next Level Progress</Text>
-            <Text style={styles.barVal}>{xp % 250}/250 XP</Text>
+            <Text style={styles.barLabel}>Level {level + 1} Progress</Text>
+            <Text style={styles.barVal}>{xpInLevel}/250 XP</Text>
           </View>
           <View style={styles.heroProgressTrack}>
             <View
               style={[
                 styles.heroProgressFill,
-                { width: `${levelPct}%`, backgroundColor: colors.amber },
+                { width: `${Math.max(4, levelPct)}%`, backgroundColor: colors.amber },
               ]}
             />
           </View>
@@ -370,6 +416,31 @@ const createStyles = (COLORS: ThemePalette) => StyleSheet.create({
   },
   levelPillText: { fontSize: 10, fontWeight: '800', color: COLORS.amber, letterSpacing: 0.5 },
   xpText: { fontSize: 11, fontWeight: '800', color: COLORS.cyan },
+  levelCrest: {
+    width: 58,
+    height: 58,
+    borderRadius: 16,
+    backgroundColor: COLORS.amberSoft,
+    borderWidth: 1.5,
+    borderColor: 'rgba(245, 158, 11, 0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  levelCrestLabel: { fontSize: 9, fontWeight: '800', color: COLORS.amber, letterSpacing: 0.6 },
+  levelCrestNum: { fontSize: 21, fontWeight: '900', color: COLORS.textPrimary, lineHeight: 23 },
+  heroChipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+  heroChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 999,
+    backgroundColor: COLORS.card,
+    borderWidth: 1,
+    borderColor: COLORS.borderSubtle,
+  },
+  heroChipText: { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary },
   barsWrap: { gap: 5 },
   barHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   barLabel: { fontSize: 11, fontWeight: '600', color: COLORS.textSecondary },
