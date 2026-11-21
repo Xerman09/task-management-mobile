@@ -191,7 +191,14 @@ export default function TasksScreen({
                 !isCompleted && Boolean(task.due_date) && (task.due_date as string) < todayStr;
 
               return (
-                <View key={task.id} style={[styles.card, isCompleted && styles.cardDone]}>
+                <View
+                  key={task.id}
+                  style={[
+                    styles.card,
+                    { borderLeftWidth: 3, borderLeftColor: prio.text },
+                    isCompleted && styles.cardDone,
+                  ]}
+                >
                   <TouchableOpacity
                     style={styles.cardMain}
                     activeOpacity={0.85}

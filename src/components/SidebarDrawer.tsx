@@ -21,6 +21,7 @@ type TabKey = 'home' | 'tasks' | 'projects' | 'profile';
 
 interface SidebarDrawerProps {
   visible: boolean;
+  docked?: boolean;
   user: User;
   activeTab: TabKey;
   activeQueue: QueueFilter;
@@ -42,6 +43,7 @@ const DRAWER_WIDTH = Math.min(310, Math.round(Dimensions.get('window').width * 0
 
 export default function SidebarDrawer({
   visible,
+  docked = false,
   user,
   activeTab,
   activeQueue,
@@ -63,6 +65,7 @@ export default function SidebarDrawer({
   const backdropAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    if (docked) return;
     if (visible) {
       setModalVisible(true);
       Animated.parallel([
@@ -170,46 +173,31 @@ export default function SidebarDrawer({
     onClose();
   };
 
-  if (!modalVisible) return null;
+  if (!docked && !modalVisible) return null;
 
-  return (
-    <Modal
-      transparent
-      visible={modalVisible}
-      animationType="none"
-      onRequestClose={onClose}
-    >
-      <View style={styles.root}>
-        <Animated.View style={[styles.backdrop, { opacity: backdropAnim }]}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        </Animated.View>
-
-        <Animated.View
-          style={[
-            styles.drawer,
-            { width: DRAWER_WIDTH, transform: [{ translateX: slideAnim }] },
-          ]}
-        >
-          <SafeAreaView style={styles.safe} edges={['top', 'bottom', 'left']}>
-            {/* Brand + Close Header */}
-            <View style={styles.header}>
-              <View style={styles.brandRow}>
-                <View style={styles.brandIcon}>
-                  <Ionicons name="checkmark-done" size={17} color={COLORS.cyan} />
-                </View>
-                <View>
-                  <Text style={styles.brandTitle}>TaskFlow</Text>
-                  <Text style={styles.brandSub}>Workspace</Text>
-                </View>
-              </View>
-              <TouchableOpacity
-                onPress={onClose}
-                style={styles.closeBtn}
-                accessibilityLabel="Close sidebar"
-              >
-                <Ionicons name="close" size={20} color={COLORS.textSecondary} />
-              </TouchableOpacity>
-            </View>
+  const sidebarContent = (
+    <SafeAreaView style={styles.safe} edges={docked ? ['top', 'bottom'] : ['top', 'bottom', 'left']}>
+      {/* Brand + Close Header */}
+      <View style={styles.header}>
+        <View style={styles.brandRow}>
+          <View style={styles.brandIcon}>
+            <Ionicons name="checkmark-done" size={17} color={COLORS.cyan} />
+          </View>
+          <View>
+            <Text style={styles.brandTitle}>TaskFlow</Text>
+            <Text style={styles.brandSub}>Workspace</Text>
+          </View>
+        </View>
+        {!docked && (
+          <TouchableOpacity
+            onPress={onClose}
+            style={styles.closeBtn}
+            accessibilityLabel="Close sidebar"
+          >
+            <Ionicons name="close" size={20} color={COLORS.textSecondary} />
+          </TouchableOpacity>
+        )}
+      </View>
 
             {/* User Card */}
             <TouchableOpacity
@@ -419,6 +407,31 @@ export default function SidebarDrawer({
               </TouchableOpacity>
             </View>
           </SafeAreaView>
+  );
+
+  if (docked) {
+    return <View style={styles.dockedDrawer}>{sidebarContent}</View>;
+  }
+
+  return (
+    <Modal
+      transparent
+      visible={modalVisible}
+      animationType="none"
+      onRequestClose={onClose}
+    >
+      <View style={styles.root}>
+        <Animated.View style={[styles.backdrop, { opacity: backdropAnim }]}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        </Animated.View>
+
+        <Animated.View
+          style={[
+            styles.drawer,
+            { width: DRAWER_WIDTH, transform: [{ translateX: slideAnim }] },
+          ]}
+        >
+          {sidebarContent}
         </Animated.View>
       </View>
     </Modal>
@@ -533,6 +546,13 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     shadowOffset: { width: 4, height: 0 },
     elevation: 16,
+  },
+  dockedDrawer: {
+    width: 272,
+    height: '100%',
+    backgroundColor: COLORS.surface,
+    borderRightWidth: 1,
+    borderRightColor: COLORS.borderSubtle,
   },
   safe: {
     flex: 1,

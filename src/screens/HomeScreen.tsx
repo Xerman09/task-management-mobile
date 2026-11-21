@@ -36,43 +36,62 @@ export default function HomeScreen({
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-      {/* Greeting Header */}
-      <View style={styles.headerRow}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.kicker}>TODAY • {formatDisplayDate(todayStr).toUpperCase()}</Text>
-          <Text style={styles.greeting}>Welcome back, {user.name.split(' ')[0]}</Text>
+      {/* Hero Focus Banner */}
+      <View style={styles.heroCard}>
+        <View style={styles.heroTopRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.kicker}>TODAY • {formatDisplayDate(todayStr).toUpperCase()}</Text>
+            <Text style={styles.greeting}>Welcome back, {user.name.split(' ')[0]}</Text>
+            <Text style={styles.heroSummary}>
+              {dueTodayTasks.length} due today • {overdueTasks.length} overdue • {total - completed} open
+            </Text>
+          </View>
+          <View style={styles.heroPctBadge}>
+            <Text style={styles.heroPctValue}>{completionPct}%</Text>
+            <Text style={styles.heroPctLabel}>DONE</Text>
+          </View>
         </View>
-        <View style={styles.syncPill}>
-          <View style={styles.syncDot} />
-          <Text style={styles.syncText}>Live UI</Text>
+
+        <View style={styles.heroProgressTrack}>
+          <View
+            style={[
+              styles.heroProgressFill,
+              { width: `${completionPct}%` },
+            ]}
+          />
         </View>
-      </View>
 
-      {/* Quick Actions */}
-      <View style={styles.quickActions}>
-        <TouchableOpacity
-          style={[styles.actionBtn, styles.actionPrimary]}
-          activeOpacity={0.85}
-          onPress={() => onOpenCreate('single')}
-        >
-          <Ionicons name="add-circle" size={18} color="#09090b" />
-          <Text style={styles.actionPrimaryText}>New Task</Text>
-        </TouchableOpacity>
+        {/* Quick Actions */}
+        <View style={styles.quickActions}>
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.actionPrimary]}
+            activeOpacity={0.85}
+            onPress={() => onOpenCreate('single')}
+          >
+            <Ionicons name="add-circle" size={18} color="#09090b" />
+            <Text style={styles.actionPrimaryText}>New Task</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.actionBtn, styles.actionAi]}
-          activeOpacity={0.85}
-          onPress={() => onOpenCreate('ai_plan')}
-        >
-          <Ionicons name="sparkles" size={16} color="#ddd6fe" />
-          <Text style={styles.actionAiText}>AI Plan Import</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.actionAi]}
+            activeOpacity={0.85}
+            onPress={() => onOpenCreate('ai_plan')}
+          >
+            <Ionicons name="sparkles" size={16} color="#ddd6fe" />
+            <Text style={styles.actionAiText}>AI Plan Import</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* KPI Grid */}
       <View style={styles.kpiGrid}>
         <TouchableOpacity style={styles.kpiCard} onPress={() => onGoToTasks('all')} activeOpacity={0.8}>
-          <Text style={styles.kpiLabel}>Completion</Text>
+          <View style={styles.kpiTop}>
+            <Text style={styles.kpiLabel}>Completion</Text>
+            <View style={[styles.kpiIconBox, { backgroundColor: COLORS.cyanSoft }]}>
+              <Ionicons name="checkmark-done" size={14} color={COLORS.cyan} />
+            </View>
+          </View>
           <Text style={styles.kpiValue}>{completionPct}%</Text>
           <View style={styles.progressTrack}>
             <View style={[styles.progressFill, { width: `${completionPct}%`, backgroundColor: COLORS.cyan }]} />
@@ -83,13 +102,27 @@ export default function HomeScreen({
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.kpiCard} onPress={() => onGoToTasks('today')} activeOpacity={0.8}>
-          <Text style={styles.kpiLabel}>Due Today</Text>
+          <View style={styles.kpiTop}>
+            <Text style={styles.kpiLabel}>Due Today</Text>
+            <View style={[styles.kpiIconBox, { backgroundColor: COLORS.amberSoft }]}>
+              <Ionicons name="sunny" size={14} color={COLORS.amber} />
+            </View>
+          </View>
           <Text style={[styles.kpiValue, { color: COLORS.amber }]}>{dueTodayTasks.length}</Text>
           <Text style={styles.kpiSub}>Scheduled for today</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.kpiCard} onPress={() => onGoToTasks('missed')} activeOpacity={0.8}>
-          <Text style={styles.kpiLabel}>Missed</Text>
+          <View style={styles.kpiTop}>
+            <Text style={styles.kpiLabel}>Missed</Text>
+            <View style={[styles.kpiIconBox, { backgroundColor: overdueTasks.length > 0 ? COLORS.roseSoft : COLORS.emeraldSoft }]}>
+              <Ionicons
+                name={overdueTasks.length > 0 ? 'alert-circle' : 'shield-checkmark'}
+                size={14}
+                color={overdueTasks.length > 0 ? COLORS.rose : COLORS.emerald}
+              />
+            </View>
+          </View>
           <Text style={[styles.kpiValue, { color: overdueTasks.length > 0 ? COLORS.rose : COLORS.textPrimary }]}>
             {overdueTasks.length}
           </Text>
@@ -97,7 +130,12 @@ export default function HomeScreen({
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.kpiCard} onPress={() => onGoToTasks('all')} activeOpacity={0.8}>
-          <Text style={styles.kpiLabel}>Open Tasks</Text>
+          <View style={styles.kpiTop}>
+            <Text style={styles.kpiLabel}>Open Tasks</Text>
+            <View style={[styles.kpiIconBox, { backgroundColor: COLORS.violetSoft }]}>
+              <Ionicons name="layers" size={14} color="#c4b5fd" />
+            </View>
+          </View>
           <Text style={styles.kpiValue}>{total - completed}</Text>
           <Text style={styles.kpiSub}>Active workspace items</Text>
         </TouchableOpacity>
@@ -127,7 +165,7 @@ export default function HomeScreen({
             return (
               <TouchableOpacity
                 key={task.id}
-                style={styles.taskCard}
+                style={[styles.taskCard, { borderLeftWidth: 3, borderLeftColor: prio.text }]}
                 activeOpacity={0.85}
                 onPress={() => onSelectTask(task)}
               >
@@ -209,23 +247,42 @@ export default function HomeScreen({
 
 const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: COLORS.bg },
-  content: { padding: 16, paddingBottom: 100, gap: 16 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  content: { padding: 16, paddingBottom: 100, gap: 16, maxWidth: 960, width: '100%', alignSelf: 'center' },
+  heroCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: COLORS.cyanBorder,
+    padding: 16,
+    gap: 12,
+  },
+  heroTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   kicker: { fontSize: 11, fontWeight: '700', color: COLORS.cyan, letterSpacing: 0.8 },
   greeting: { fontSize: 22, fontWeight: '800', color: COLORS.textPrimary, marginTop: 2 },
-  syncPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-    backgroundColor: COLORS.emeraldSoft,
+  heroSummary: { fontSize: 12, color: COLORS.textSecondary, marginTop: 4 },
+  heroPctBadge: {
+    width: 58,
+    height: 58,
+    borderRadius: 16,
+    backgroundColor: COLORS.cyanSoft,
     borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.3)',
+    borderColor: COLORS.cyanBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  syncDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: COLORS.emerald },
-  syncText: { fontSize: 11, fontWeight: '700', color: COLORS.emerald },
+  heroPctValue: { fontSize: 17, fontWeight: '800', color: COLORS.cyan },
+  heroPctLabel: { fontSize: 9, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 0.6 },
+  heroProgressTrack: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: COLORS.borderSubtle,
+    overflow: 'hidden',
+  },
+  heroProgressFill: {
+    height: '100%',
+    borderRadius: 3,
+    backgroundColor: COLORS.cyan,
+  },
   quickActions: { flexDirection: 'row', gap: 10 },
   actionBtn: {
     flex: 1,
@@ -236,18 +293,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 7,
   },
-  actionPrimary: { backgroundColor: COLORS.textPrimary },
-  actionPrimaryText: { fontSize: 13, fontWeight: '700', color: '#09090b' },
+  actionPrimary: { backgroundColor: COLORS.cyan },
+  actionPrimaryText: { fontSize: 13, fontWeight: '800', color: '#09090b' },
   actionAi: { backgroundColor: COLORS.violetSoft, borderWidth: 1, borderColor: COLORS.violetBorder },
   actionAiText: { fontSize: 13, fontWeight: '700', color: '#ddd6fe' },
   kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   kpiCard: {
-    width: '48.4%',
+    flexGrow: 1,
+    minWidth: 150,
     backgroundColor: COLORS.surface,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: COLORS.border,
     padding: 14,
+  },
+  kpiTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  kpiIconBox: {
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   kpiLabel: { fontSize: 11, fontWeight: '600', color: COLORS.textSecondary },
   kpiValue: { fontSize: 24, fontWeight: '800', color: COLORS.textPrimary, marginTop: 4 },

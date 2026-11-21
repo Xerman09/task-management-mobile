@@ -24,28 +24,45 @@ export default function ProjectsScreen({
 
       {/* Folders */}
       <Text style={styles.sectionLabel}>FOLDERS ({folders.length})</Text>
-      <View style={styles.folderRow}>
-        {folders.map((folder) => {
-          const projCount = projects.filter((p) => p.folder_id === folder.id).length;
-          return (
-            <View key={folder.id} style={styles.folderCard}>
-              <View style={[styles.folderIcon, { backgroundColor: `${folder.color}25` }]}>
-                <Ionicons name="folder" size={18} color={folder.color} />
+      {folders.length === 0 ? (
+        <View style={styles.emptyBox}>
+          <Ionicons name="folder-open-outline" size={22} color={COLORS.textMuted} />
+          <Text style={styles.emptyText}>No folders yet</Text>
+        </View>
+      ) : (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.folderRow}
+        >
+          {folders.map((folder) => {
+            const projCount = projects.filter((p) => p.folder_id === folder.id).length;
+            return (
+              <View key={folder.id} style={styles.folderCard}>
+                <View style={[styles.folderIcon, { backgroundColor: `${folder.color}25` }]}>
+                  <Ionicons name="folder" size={18} color={folder.color} />
+                </View>
+                <Text style={styles.folderName} numberOfLines={1}>
+                  {folder.name}
+                </Text>
+                <Text style={styles.folderSub}>
+                  {projCount} {projCount === 1 ? 'project' : 'projects'}
+                </Text>
               </View>
-              <Text style={styles.folderName} numberOfLines={1}>
-                {folder.name}
-              </Text>
-              <Text style={styles.folderSub}>
-                {projCount} {projCount === 1 ? 'project' : 'projects'}
-              </Text>
-            </View>
-          );
-        })}
-      </View>
+            );
+          })}
+        </ScrollView>
+      )}
 
       {/* Projects */}
       <Text style={styles.sectionLabel}>PROJECTS ({projects.length})</Text>
-      <View style={styles.list}>
+      {projects.length === 0 ? (
+        <View style={styles.emptyBox}>
+          <Ionicons name="layers-outline" size={24} color={COLORS.textMuted} />
+          <Text style={styles.emptyText}>No projects created yet</Text>
+        </View>
+      ) : (
+        <View style={styles.list}>
         {projects.map((proj) => {
           const pTasks = tasks.filter((t) => t.project_id === proj.id);
           const done = pTasks.filter((t) => t.status === 'completed').length;
@@ -90,14 +107,15 @@ export default function ProjectsScreen({
             </TouchableOpacity>
           );
         })}
-      </View>
+        </View>
+      )}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: COLORS.bg },
-  content: { padding: 16, paddingBottom: 100, gap: 12 },
+  content: { padding: 16, paddingBottom: 100, gap: 12, maxWidth: 960, width: '100%', alignSelf: 'center' },
   title: { fontSize: 20, fontWeight: '800', color: COLORS.textPrimary },
   subtitle: { fontSize: 12, color: COLORS.textSecondary, marginTop: -6, marginBottom: 4 },
   sectionLabel: {
@@ -107,9 +125,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
     marginTop: 6,
   },
-  folderRow: { flexDirection: 'row', gap: 10 },
+  folderRow: { flexDirection: 'row', gap: 10, paddingRight: 4 },
   folderCard: {
-    flex: 1,
+    width: 158,
     backgroundColor: COLORS.surface,
     borderRadius: 14,
     borderWidth: 1,
@@ -117,6 +135,18 @@ const styles = StyleSheet.create({
     padding: 12,
     gap: 6,
   },
+  emptyBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: COLORS.surface,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 18,
+  },
+  emptyText: { fontSize: 12, color: COLORS.textMuted, fontWeight: '600' },
   folderIcon: {
     width: 34,
     height: 34,

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -49,6 +49,8 @@ export default function App() {
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const { width } = useWindowDimensions();
+  const isWide = width >= 900;
 
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const syncFingerprintRef = useRef<string>('');
@@ -384,36 +386,123 @@ export default function App() {
     );
   }
 
+  const syncColor =
+    syncStatus === 'synced'
+      ? COLORS.emerald
+      : syncStatus === 'syncing'
+        ? COLORS.cyan
+        : COLORS.rose;
+  const syncLabel =
+    syncStatus === 'synced' ? 'Live' : syncStatus === 'syncing' ? 'Syncing' : 'Retry';
+
+  const sidebarProps = {
+    user,
+    activeTab,
+    activeQueue,
+    selectedProjectId,
+    tasks,
+    projects,
+    folders,
+    syncStatus,
+    onClose: () => setSidebarOpen(false),
+    onSelectTab: (tab: TabKey) => setActiveTab(tab),
+    onSelectQueue: (queue: QueueFilter) => {
+      setActiveQueue(queue);
+      setActiveTab('tasks');
+    },
+    onSelectProject: (pid: number | 'all') => {
+      setSelectedProjectId(pid);
+      setActiveQueue('all');
+      setActiveTab('tasks');
+    },
+    onOpenCreate: (mode: 'single' | 'ai_plan') => {
+      setCreateInitialMode(mode);
+      setCreateVisible(true);
+    },
+    onRefreshSync: () => {
+      void loadWorkspaceData(true);
+      showToast('Synced with backend');
+    },
+    onRequestLogout: () => {
+      setConfirmState({
+        visible: true,
+        title: 'Sign Out',
+        message: 'Sign out of your TaskFlow workspace?',
+        confirmLabel: 'Sign Out',
+        onConfirm: async () => {
+          setConfirmState((s) => ({ ...s, visible: false }));
+          await clearSession();
+          syncFingerprintRef.current = '';
+          setTasks([]);
+          setProjects([]);
+          setFolders([]);
+          setUser(null);
+        },
+      });
+    },
+  };
+
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
       <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-        {/* Top App Bar */}
-        <View style={styles.topBar}>
-          <View style={styles.brandRow}>
-            <TouchableOpacity
-              style={styles.menuBtn}
-              onPress={() => setSidebarOpen(true)}
-              accessibilityLabel="Open sidebar menu"
-            >
-              <Ionicons name="menu-outline" size={20} color={COLORS.textPrimary} />
-            </TouchableOpacity>
-            <View style={styles.brandIcon}>
-              <Ionicons name="checkmark-done" size={16} color={COLORS.cyan} />
+        <View style={styles.shell}>
+          {isWide && <SidebarDrawer visible docked {...sidebarProps} />}
+
+          <View style={styles.mainCol}>
+            {/* Top App Bar */}
+            <View style={styles.topBar}>
+              <View style={styles.brandRow}>
+                {!isWide && (
+                  <TouchableOpacity
+                    style={styles.menuBtn}
+                    onPress={() => setSidebarOpen(true)}
+                    accessibilityLabel="Open sidebar menu"
+                  >
+                    <Ionicons name="menu-outline" size={20} color={COLORS.textPrimary} />
+                  </TouchableOpacity>
+                )}
+                {!isWide && (
+                  <View style={styles.brandIcon}>
+                    <Ionicons name="checkmark-done" size={16} color={COLORS.cyan} />
+                  </View>
+                )}
+                <Text style={styles.brandTitle}>
+                  {isWide
+                    ? activeTab === 'home'
+                      ? 'Today Overview'
+                      : activeTab === 'tasks'
+                        ? 'Tasks & Board'
+                        : activeTab === 'projects'
+                          ? 'Folders & Projects'
+                          : 'Profile & Sync'
+                    : 'TaskFlow'}
+                </Text>
+              </View>
+
+              <View style={styles.topRightRow}>
+                <TouchableOpacity
+                  style={styles.liveSyncPill}
+                  onPress={() => {
+                    void loadWorkspaceData(true);
+                    showToast('Synced with backend');
+                  }}
+                >
+                  <View style={[styles.liveSyncDot, { backgroundColor: syncColor }]} />
+                  <Text style={[styles.liveSyncText, { color: syncColor }]}>{syncLabel}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.aiShortcutBtn}
+                  onPress={() => {
+                    setCreateInitialMode('ai_plan');
+                    setCreateVisible(true);
+                  }}
+                >
+                  <Ionicons name="sparkles" size={13} color="#ddd6fe" />
+                  <Text style={styles.aiShortcutText}>AI Plan</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-            <Text style={styles.brandTitle}>TaskFlow</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.aiShortcutBtn}
-            onPress={() => {
-              setCreateInitialMode('ai_plan');
-              setCreateVisible(true);
-            }}
-          >
-            <Ionicons name="sparkles" size={13} color="#ddd6fe" />
-            <Text style={styles.aiShortcutText}>AI Plan</Text>
-          </TouchableOpacity>
-        </View>
 
         {/* Active Screen */}
         <View style={styles.screenArea}>
@@ -500,7 +589,7 @@ export default function App() {
 
         {/* Floating Quick Create Button */}
         <TouchableOpacity
-          style={styles.fab}
+          style={[styles.fab, isWide && styles.fabWide]}
           activeOpacity={0.85}
           onPress={() => {
             setCreateInitialMode('single');
@@ -512,42 +601,46 @@ export default function App() {
 
         {/* Toast Banner */}
         {toastMsg && (
-          <View style={styles.toast}>
+          <View style={[styles.toast, isWide && styles.toastWide]}>
             <Text style={styles.toastText}>{toastMsg}</Text>
           </View>
         )}
 
-        {/* Bottom Tab Bar */}
-        <SafeAreaView edges={['bottom']} style={styles.tabBarSafe}>
-          <View style={styles.tabBar}>
-            {(
-              [
-                { key: 'home', label: 'Today', icon: 'sunny-outline', activeIcon: 'sunny' },
-                { key: 'tasks', label: 'Tasks', icon: 'checkbox-outline', activeIcon: 'checkbox' },
-                { key: 'projects', label: 'Projects', icon: 'folder-outline', activeIcon: 'folder' },
-                { key: 'profile', label: 'Profile', icon: 'person-outline', activeIcon: 'person' },
-              ] as const
-            ).map((tab) => {
-              const active = activeTab === tab.key;
-              return (
-                <TouchableOpacity
-                  key={tab.key}
-                  style={styles.tabItem}
-                  onPress={() => setActiveTab(tab.key)}
-                >
-                  <Ionicons
-                    name={active ? tab.activeIcon : tab.icon}
-                    size={21}
-                    color={active ? COLORS.cyan : COLORS.textMuted}
-                  />
-                  <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>
-                    {tab.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
+        {/* Bottom Tab Bar (mobile only; wide screens use docked sidebar) */}
+        {!isWide && (
+          <SafeAreaView edges={['bottom']} style={styles.tabBarSafe}>
+            <View style={styles.tabBar}>
+              {(
+                [
+                  { key: 'home', label: 'Today', icon: 'sunny-outline', activeIcon: 'sunny' },
+                  { key: 'tasks', label: 'Tasks', icon: 'checkbox-outline', activeIcon: 'checkbox' },
+                  { key: 'projects', label: 'Projects', icon: 'folder-outline', activeIcon: 'folder' },
+                  { key: 'profile', label: 'Profile', icon: 'person-outline', activeIcon: 'person' },
+                ] as const
+              ).map((tab) => {
+                const active = activeTab === tab.key;
+                return (
+                  <TouchableOpacity
+                    key={tab.key}
+                    style={styles.tabItem}
+                    onPress={() => setActiveTab(tab.key)}
+                  >
+                    <Ionicons
+                      name={active ? tab.activeIcon : tab.icon}
+                      size={21}
+                      color={active ? COLORS.cyan : COLORS.textMuted}
+                    />
+                    <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>
+                      {tab.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </SafeAreaView>
+        )}
           </View>
-        </SafeAreaView>
+        </View>
 
         {/* Modals */}
         <CreateTaskModal
@@ -606,53 +699,7 @@ export default function App() {
           onCancel={() => setConfirmState((s) => ({ ...s, visible: false }))}
         />
 
-        <SidebarDrawer
-          visible={sidebarOpen}
-          user={user}
-          activeTab={activeTab}
-          activeQueue={activeQueue}
-          selectedProjectId={selectedProjectId}
-          tasks={tasks}
-          projects={projects}
-          folders={folders}
-          syncStatus={syncStatus}
-          onClose={() => setSidebarOpen(false)}
-          onSelectTab={(tab) => setActiveTab(tab)}
-          onSelectQueue={(queue) => {
-            setActiveQueue(queue);
-            setActiveTab('tasks');
-          }}
-          onSelectProject={(pid) => {
-            setSelectedProjectId(pid);
-            setActiveQueue('all');
-            setActiveTab('tasks');
-          }}
-          onOpenCreate={(mode) => {
-            setCreateInitialMode(mode);
-            setCreateVisible(true);
-          }}
-          onRefreshSync={() => {
-            void loadWorkspaceData(true);
-            showToast('Synced with backend');
-          }}
-          onRequestLogout={() => {
-            setConfirmState({
-              visible: true,
-              title: 'Sign Out',
-              message: 'Sign out of your TaskFlow workspace?',
-              confirmLabel: 'Sign Out',
-              onConfirm: async () => {
-                setConfirmState((s) => ({ ...s, visible: false }));
-                await clearSession();
-                syncFingerprintRef.current = '';
-                setTasks([]);
-                setProjects([]);
-                setFolders([]);
-                setUser(null);
-              },
-            });
-          }}
-        />
+        {!isWide && <SidebarDrawer visible={sidebarOpen} {...sidebarProps} />}
       </SafeAreaView>
     </SafeAreaProvider>
   );
@@ -672,6 +719,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   safe: { flex: 1, backgroundColor: COLORS.surface },
+  shell: { flex: 1, flexDirection: 'row', backgroundColor: COLORS.bg },
+  mainCol: { flex: 1, backgroundColor: COLORS.bg },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -717,6 +766,20 @@ const styles = StyleSheet.create({
     borderColor: COLORS.violetBorder,
   },
   aiShortcutText: { fontSize: 11, fontWeight: '700', color: '#ddd6fe' },
+  topRightRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  liveSyncPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 999,
+    backgroundColor: COLORS.card,
+    borderWidth: 1,
+    borderColor: COLORS.borderSubtle,
+  },
+  liveSyncDot: { width: 6, height: 6, borderRadius: 3 },
+  liveSyncText: { fontSize: 11, fontWeight: '700' },
   screenArea: { flex: 1, backgroundColor: COLORS.bg },
   fab: {
     position: 'absolute',
@@ -734,6 +797,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 6,
   },
+  fabWide: { bottom: 24, right: 24 },
   toast: {
     position: 'absolute',
     bottom: 84,
@@ -746,6 +810,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
+  toastWide: { bottom: 24, left: 24, right: 96, maxWidth: 360 },
   toastText: { fontSize: 12, fontWeight: '600', color: COLORS.textPrimary },
   tabBarSafe: {
     backgroundColor: COLORS.surface,
