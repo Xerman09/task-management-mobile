@@ -30,6 +30,24 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Stamp build metadata and version.json
+        run: |
+          cat > src/buildInfo.ts << 'EOF'
+          export const BUILD_INFO = {
+            version: '1.0.${{ github.run_number }}',
+            runNumber: ${{ github.run_number }},
+            commit: '${{ github.sha }}',
+          };
+          EOF
+          cat > version.json << 'EOF'
+          {
+            "version": "1.0.${{ github.run_number }}",
+            "run_number": ${{ github.run_number }},
+            "commit": "${{ github.sha }}",
+            "apk_url": "https://github.com/Xerman09/task-management-mobile/releases/download/latest-apk/TaskFlow.apk"
+          }
+          EOF
+
       - name: Expo Prebuild (Android)
         run: npx expo prebuild --platform android --non-interactive
 
@@ -61,7 +79,9 @@ jobs:
           tag_name: latest-apk
           name: TaskFlow Mobile APK (Latest)
           body: Latest Android APK build from `main` (`${{ github.sha }}`).
-          files: TaskFlow.apk
+          files: |
+            TaskFlow.apk
+            version.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

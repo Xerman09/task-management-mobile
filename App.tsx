@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -38,7 +38,9 @@ import PomodoroBar from './src/components/PomodoroBar';
 import CommandPaletteModal from './src/components/CommandPaletteModal';
 import WorkspaceToolsModal, { WorkspaceToolTab } from './src/components/WorkspaceToolsModal';
 import NotificationsModal from './src/components/NotificationsModal';
+import UpdateModal from './src/components/UpdateModal';
 import { TaskFlowIcon } from './src/components/TaskFlowLogo';
+import { BUILD_INFO } from './src/buildInfo';
 import { triggerHaptic } from './src/utils/feedback';
 import { getTodayYMD } from './src/utils/date';
 
@@ -78,6 +80,11 @@ function AppContent() {
   const [commandOpen, setCommandOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [toolsTab, setToolsTab] = useState<WorkspaceToolTab | null>(null);
+  const [updateInfo, setUpdateInfo] = useState<{
+    visible: boolean;
+    latestVersion: string;
+    apkUrl: string;
+  } | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const { width } = useWindowDimensions();
   const isWide = width >= 900;
@@ -110,6 +117,48 @@ function AppContent() {
     setToastMsg(msg);
     toastTimer.current = setTimeout(() => setToastMsg(null), 3000);
   }, []);
+
+  const checkForAppUpdate = useCallback(
+    async (manual = false) => {
+      if (!manual && (Platform.OS !== 'android' || BUILD_INFO.runNumber === 0)) {
+        return;
+      }
+      try {
+        const res = await fetch(
+          `https://github.com/Xerman09/task-management-mobile/releases/download/latest-apk/version.json?t=${Date.now()}`
+        );
+        if (!res.ok) {
+          if (manual) showToast('No newer update found');
+          return;
+        }
+        const data = (await res.json()) as {
+          version?: string;
+          run_number?: number;
+          commit?: string;
+          apk_url?: string;
+        };
+        const isNewer =
+          (typeof data.run_number === 'number' && data.run_number > BUILD_INFO.runNumber) ||
+          (Boolean(data.commit) && BUILD_INFO.commit !== 'local' && data.commit !== BUILD_INFO.commit);
+        if (isNewer && data.apk_url) {
+          setUpdateInfo({
+            visible: true,
+            latestVersion: `v${data.version || 'latest'}`,
+            apkUrl: data.apk_url,
+          });
+        } else if (manual) {
+          showToast(`You are on the latest version (v${BUILD_INFO.version})`);
+        }
+      } catch {
+        if (manual) showToast('Could not check for updates right now');
+      }
+    },
+    [showToast]
+  );
+
+  useEffect(() => {
+    void checkForAppUpdate(false);
+  }, [checkForAppUpdate]);
 
   const loadWorkspaceData = useCallback(async (silent = false) => {
     if (silent) setSyncStatus('syncing');
@@ -780,6 +829,7 @@ function AppContent() {
                 setCreateVisible(true);
               }}
               onOpenTools={(tab) => setToolsTab(tab)}
+              onCheckUpdates={() => void checkForAppUpdate(true)}
               onRequestLogout={() => {
                 setConfirmState({
                   visible: true,
@@ -860,6 +910,17 @@ function AppContent() {
           tasks={tasks}
           onClose={() => setNotificationsOpen(false)}
           onSelectTask={(t) => setSelectedTaskId(t.id)}
+        />
+
+        <UpdateModal
+          visible={Boolean(updateInfo?.visible)}
+          currentVersion={`v${BUILD_INFO.version}`}
+          latestVersion={updateInfo?.latestVersion || 'latest'}
+          apkUrl={
+            updateInfo?.apkUrl ||
+            'https://github.com/Xerman09/task-management-mobile/releases/download/latest-apk/TaskFlow.apk'
+          }
+          onDismiss={() => setUpdateInfo((u) => (u ? { ...u, visible: false } : null))}
         />
       </SafeAreaView>
         )}
@@ -985,6 +1046,17 @@ function AppContent() {
           tasks={tasks}
           onClose={() => setNotificationsOpen(false)}
           onSelectTask={(t) => setSelectedTaskId(t.id)}
+        />
+
+        <UpdateModal
+          visible={Boolean(updateInfo?.visible)}
+          currentVersion={`v${BUILD_INFO.version}`}
+          latestVersion={updateInfo?.latestVersion || 'latest'}
+          apkUrl={
+            updateInfo?.apkUrl ||
+            'https://github.com/Xerman09/task-management-mobile/releases/download/latest-apk/TaskFlow.apk'
+          }
+          onDismiss={() => setUpdateInfo((u) => (u ? { ...u, visible: false } : null))}
         />
       </SafeAreaView>
     </SafeAreaProvider>

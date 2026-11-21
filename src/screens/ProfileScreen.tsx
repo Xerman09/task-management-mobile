@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeId, ThemePalette, THEMES } from '../theme';
 import { useTheme } from '../ThemeContext';
+import { BUILD_INFO } from '../buildInfo';
 import { User } from '../types';
 
 interface ProfileScreenProps {
@@ -13,6 +14,7 @@ interface ProfileScreenProps {
   onRefreshSync: () => void;
   onOpenAiImport: () => void;
   onOpenTools: (tab: 'automations' | 'integrations' | 'data') => void;
+  onCheckUpdates: () => void;
   onRequestLogout: () => void;
 }
 
@@ -24,6 +26,7 @@ export default function ProfileScreen({
   onRefreshSync,
   onOpenAiImport,
   onOpenTools,
+  onCheckUpdates,
   onRequestLogout,
 }: ProfileScreenProps) {
   const { colors, themeId, setThemeId } = useTheme();
@@ -134,6 +137,23 @@ export default function ProfileScreen({
           <View style={{ flex: 1 }}>
             <Text style={styles.menuTitle}>Workspace Tools</Text>
             <Text style={styles.menuSub}>Automations, Integrations &amp; Data Center</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+        </TouchableOpacity>
+
+        <View style={styles.divider} />
+
+        <TouchableOpacity
+          style={styles.menuRow}
+          onPress={onCheckUpdates}
+          activeOpacity={0.75}
+        >
+          <View style={[styles.menuIcon, { backgroundColor: colors.amberSoft }]}>
+            <Ionicons name="cloud-download-outline" size={18} color={colors.amber} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.menuTitle}>App Updates</Text>
+            <Text style={styles.menuSub}>Current version v{BUILD_INFO.version}</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
         </TouchableOpacity>
