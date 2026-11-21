@@ -121,3 +121,4 @@ const createStyles = (COLORS: ThemePalette) =>
     },
     downloadText: { fontSize: 13, fontWeight: '800', color: '#09090b' },
   });
+

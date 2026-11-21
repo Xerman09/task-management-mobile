@@ -3,3 +3,4 @@ export const BUILD_INFO = {
   runNumber: 0,
   commit: 'local',
 };
+
