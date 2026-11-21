@@ -773,7 +773,7 @@ function AppContent() {
             <CalendarScreen
               tasks={tasks}
               onSelectTask={(task) => setSelectedTaskId(task.id)}
-              onAdvanceStatus={handleAdvanceStatus}
+              onAdvanceStatus={handleToggleComplete}
             />
           )}
 
