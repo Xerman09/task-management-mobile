@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -36,6 +37,11 @@ import SidebarDrawer from './src/components/SidebarDrawer';
 import PomodoroBar from './src/components/PomodoroBar';
 import CommandPaletteModal from './src/components/CommandPaletteModal';
 import WorkspaceToolsModal, { WorkspaceToolTab } from './src/components/WorkspaceToolsModal';
+import NotificationsModal from './src/components/NotificationsModal';
+import { triggerHaptic } from './src/utils/feedback';
+import { getTodayYMD } from './src/utils/date';
+
+const WORKSPACE_CACHE_KEY = '@taskflow_workspace_cache';
 
 type TabKey = 'home' | 'tasks' | 'calendar' | 'matrix' | 'projects' | 'profile';
 
@@ -69,6 +75,7 @@ function AppContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pomodoroVisible, setPomodoroVisible] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [toolsTab, setToolsTab] = useState<WorkspaceToolTab | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const { width } = useWindowDimensions();
@@ -112,6 +119,14 @@ function AppContent() {
         setTasks(boot.tasks || []);
         setProjects(boot.projects || []);
         setFolders(boot.folders || []);
+        AsyncStorage.setItem(
+          WORKSPACE_CACHE_KEY,
+          JSON.stringify({
+            tasks: boot.tasks || [],
+            projects: boot.projects || [],
+            folders: boot.folders || [],
+          })
+        ).catch(() => {});
         getTags()
           .then((tRes) => {
             if (tRes.success && tRes.tags) setAvailableTags(tRes.tags);
@@ -146,6 +161,15 @@ function AppContent() {
         setInitialServerUrl(cfg.serverUrl);
         if (cfg.token) {
           if (cfg.user) setUser(cfg.user);
+          try {
+            const cached = await AsyncStorage.getItem(WORKSPACE_CACHE_KEY);
+            if (cached && mounted) {
+              const parsed = JSON.parse(cached);
+              if (Array.isArray(parsed.tasks)) setTasks(parsed.tasks);
+              if (Array.isArray(parsed.projects)) setProjects(parsed.projects);
+              if (Array.isArray(parsed.folders)) setFolders(parsed.folders);
+            }
+          } catch {}
           await loadWorkspaceData(false);
         }
       } finally {
@@ -196,6 +220,7 @@ function AppContent() {
     const prevStatus = latest.status;
 
     setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status: nextStatus } : t)));
+    void triggerHaptic(nextStatus === 'completed' ? 'success' : 'light');
     const label = cols.find((c) => c.id === nextStatus)?.label || nextStatus;
     showToast(`Moved to ${label}`);
 
@@ -469,6 +494,11 @@ function AppContent() {
   const syncLabel =
     syncStatus === 'synced' ? 'Live' : syncStatus === 'syncing' ? 'Syncing' : 'Retry';
 
+  const todayYmd = getTodayYMD();
+  const reminderCount = tasks.filter(
+    (t) => t.status !== 'completed' && t.due_date && t.due_date <= todayYmd
+  ).length;
+
   const sidebarProps = {
     user,
     activeTab,
@@ -560,6 +590,18 @@ function AppContent() {
               </View>
 
               <View style={styles.topRightRow}>
+                <TouchableOpacity
+                  style={styles.liveSyncPill}
+                  onPress={() => setNotificationsOpen(true)}
+                  accessibilityLabel="Open reminders and alerts"
+                >
+                  <Ionicons name="notifications-outline" size={14} color={colors.textSecondary} />
+                  {reminderCount > 0 && (
+                    <Text style={[styles.liveSyncText, { color: colors.amber }]}>
+                      {reminderCount}
+                    </Text>
+                  )}
+                </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.liveSyncPill}
                   onPress={() => setCommandOpen(true)}
@@ -771,7 +813,13 @@ function AppContent() {
                 );
               })}
             </View>
-          </SafeAreaView>
+            <NotificationsModal
+          visible={notificationsOpen}
+          tasks={tasks}
+          onClose={() => setNotificationsOpen(false)}
+          onSelectTask={(t) => setSelectedTaskId(t.id)}
+        />
+      </SafeAreaView>
         )}
           </View>
         </View>
@@ -889,6 +937,12 @@ function AppContent() {
               },
             });
           }}
+        />
+        <NotificationsModal
+          visible={notificationsOpen}
+          tasks={tasks}
+          onClose={() => setNotificationsOpen(false)}
+          onSelectTask={(t) => setSelectedTaskId(t.id)}
         />
       </SafeAreaView>
     </SafeAreaProvider>
