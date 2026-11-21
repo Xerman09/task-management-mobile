@@ -33,37 +33,108 @@ export default function HomeScreen({
   const total = tasks.length;
   const completed = tasks.filter((t) => t.status === 'completed').length;
   const completionPct = total > 0 ? Math.round((completed / total) * 100) : 0;
-  const dueTodayTasks = tasks.filter((t) => t.due_date === todayStr && t.status !== 'completed');
+  const todayAllTasks = tasks.filter((t) => t.due_date === todayStr);
+  const todayDone = todayAllTasks.filter((t) => t.status === 'completed').length;
+  const todayPct = todayAllTasks.length > 0 ? Math.round((todayDone / todayAllTasks.length) * 100) : 0;
+  const dueTodayTasks = todayAllTasks.filter((t) => t.status !== 'completed');
   const overdueTasks = tasks.filter(
     (t) => Boolean(t.due_date) && (t.due_date as string) < todayStr && t.status !== 'completed'
   );
   const focusTasks = [...overdueTasks, ...dueTodayTasks].slice(0, 6);
 
+  const { xp, level, levelPct, rankTitle, perfectDays } = useMemo(() => {
+    const byDay: Record<string, { total: number; done: number }> = {};
+    for (const t of tasks) {
+      if (!t.due_date) continue;
+      if (!byDay[t.due_date]) byDay[t.due_date] = { total: 0, done: 0 };
+      byDay[t.due_date].total += 1;
+      if (t.status === 'completed') byDay[t.due_date].done += 1;
+    }
+    let perf = 0;
+    for (const d of Object.values(byDay)) {
+      if (d.total > 0 && d.done === d.total) perf += 1;
+    }
+    const totalXp = completed * 25 + perf * 50;
+    const lvl = Math.floor(totalXp / 250) + 1;
+    const pct = Math.round(((totalXp % 250) / 250) * 100);
+    const rank =
+      lvl >= 10
+        ? 'Flow Legend'
+        : lvl >= 6
+          ? 'Task Master'
+          : lvl >= 3
+            ? 'Focus Knight'
+            : 'Task Apprentice';
+    return { xp: totalXp, level: lvl, levelPct: pct, rankTitle: rank, perfectDays: perf };
+  }, [tasks, completed]);
+
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-      {/* Hero Focus Banner */}
+      {/* Gamified Hero Focus Banner */}
       <View style={styles.heroCard}>
         <View style={styles.heroTopRow}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.kicker}>TODAY • {formatDisplayDate(todayStr).toUpperCase()}</Text>
+            <View style={styles.levelBadgeRow}>
+              <View style={styles.levelPill}>
+                <Ionicons name="trophy" size={11} color={colors.amber} />
+                <Text style={styles.levelPillText}>
+                  LV.{level} • {rankTitle.toUpperCase()}
+                </Text>
+              </View>
+              <Text style={styles.xpText}>{xp} XP</Text>
+            </View>
             <Text style={styles.greeting}>Welcome back, {user.name.split(' ')[0]}</Text>
             <Text style={styles.heroSummary}>
-              {dueTodayTasks.length} due today • {overdueTasks.length} overdue • {total - completed} open
+              {dueTodayTasks.length} due today • {overdueTasks.length} overdue • {perfectDays} perfect days
             </Text>
           </View>
           <View style={styles.heroPctBadge}>
-            <Text style={styles.heroPctValue}>{completionPct}%</Text>
-            <Text style={styles.heroPctLabel}>DONE</Text>
+            <Text style={styles.heroPctValue}>{todayAllTasks.length > 0 ? todayPct : completionPct}%</Text>
+            <Text style={styles.heroPctLabel}>{todayAllTasks.length > 0 ? 'TODAY' : 'DONE'}</Text>
           </View>
         </View>
 
-        <View style={styles.heroProgressTrack}>
-          <View
-            style={[
-              styles.heroProgressFill,
-              { width: `${completionPct}%` },
-            ]}
-          />
+        {/* Dual Gamified Progress Bars: Today's Quest + Level XP */}
+        <View style={styles.barsWrap}>
+          <View style={styles.barHeaderRow}>
+            <Text style={styles.barLabel}>
+              {todayAllTasks.length > 0
+                ? `Today's Quest (${todayDone}/${todayAllTasks.length})`
+                : `Workspace Progress (${completed}/${total})`}
+            </Text>
+            <Text style={[styles.barVal, todayPct === 100 && todayAllTasks.length > 0 && { color: colors.emerald }]}>
+              {todayAllTasks.length > 0
+                ? todayPct === 100
+                  ? 'Perfect Day! +50 XP'
+                  : `${todayPct}%`
+                : `${completionPct}%`}
+            </Text>
+          </View>
+          <View style={styles.heroProgressTrack}>
+            <View
+              style={[
+                styles.heroProgressFill,
+                {
+                  width: `${todayAllTasks.length > 0 ? todayPct : completionPct}%`,
+                  backgroundColor:
+                    todayAllTasks.length > 0 && todayPct === 100 ? colors.emerald : colors.cyan,
+                },
+              ]}
+            />
+          </View>
+
+          <View style={[styles.barHeaderRow, { marginTop: 4 }]}>
+            <Text style={styles.barLabel}>Next Level Progress</Text>
+            <Text style={styles.barVal}>{xp % 250}/250 XP</Text>
+          </View>
+          <View style={styles.heroProgressTrack}>
+            <View
+              style={[
+                styles.heroProgressFill,
+                { width: `${levelPct}%`, backgroundColor: colors.amber },
+              ]}
+            />
+          </View>
         </View>
 
         {/* Quick Actions */}
@@ -216,6 +287,9 @@ export default function HomeScreen({
                           {task.due_date === todayStr ? 'Today' : formatDisplayDate(task.due_date)}
                         </Text>
                       )}
+                      <View style={styles.xpRewardPill}>
+                        <Text style={styles.xpRewardText}>+25 XP</Text>
+                      </View>
                     </View>
                   </View>
                 </View>
@@ -282,6 +356,24 @@ const createStyles = (COLORS: ThemePalette) => StyleSheet.create({
     gap: 12,
   },
   heroTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  levelBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+  levelPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    backgroundColor: COLORS.amberSoft,
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.35)',
+  },
+  levelPillText: { fontSize: 10, fontWeight: '800', color: COLORS.amber, letterSpacing: 0.5 },
+  xpText: { fontSize: 11, fontWeight: '800', color: COLORS.cyan },
+  barsWrap: { gap: 5 },
+  barHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  barLabel: { fontSize: 11, fontWeight: '600', color: COLORS.textSecondary },
+  barVal: { fontSize: 11, fontWeight: '800', color: COLORS.textPrimary },
   kicker: { fontSize: 11, fontWeight: '700', color: COLORS.cyan, letterSpacing: 0.8 },
   greeting: { fontSize: 22, fontWeight: '800', color: COLORS.textPrimary, marginTop: 2 },
   heroSummary: { fontSize: 12, color: COLORS.textSecondary, marginTop: 4 },
@@ -374,6 +466,13 @@ const createStyles = (COLORS: ThemePalette) => StyleSheet.create({
     marginBottom: 4,
   },
   miniProgressFill: { height: '100%', borderRadius: 2 },
+  xpRewardPill: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 999,
+    backgroundColor: COLORS.emeraldSoft,
+  },
+  xpRewardText: { fontSize: 9, fontWeight: '800', color: COLORS.emerald },
   emptyCard: {
     backgroundColor: COLORS.surface,
     borderRadius: 14,
