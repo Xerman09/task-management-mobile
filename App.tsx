@@ -8,17 +8,19 @@ import {
   checkSyncState,
   clearSession,
   createSubtask,
+  createTag,
   createTask,
   deleteSubtask,
   deleteTask,
   getDashboardBootstrap,
+  getTags,
   loadPersistedConfig,
   updateSubtask,
   updateTask,
 } from './src/api';
 import { DEFAULT_STATUS_COLUMNS, ThemePalette } from './src/theme';
 import { ThemeProvider, useTheme } from './src/ThemeContext';
-import { Folder, Project, Subtask, Task, TaskPriority, TaskStatus, User } from './src/types';
+import { Folder, Project, Subtask, Tag, Task, TaskPriority, TaskRecurrence, TaskStatus, User } from './src/types';
 import { ParsedPlanTask } from './src/utils/aiPlanParser';
 import LoginScreen from './src/screens/LoginScreen';
 import HomeScreen from './src/screens/HomeScreen';
@@ -50,6 +52,7 @@ function AppContent() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
+  const [availableTags, setAvailableTags] = useState<Tag[]>([]);
   const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'error'>('synced');
 
   const [activeQueue, setActiveQueue] = useState<QueueFilter>('all');
@@ -101,6 +104,11 @@ function AppContent() {
         setTasks(boot.tasks || []);
         setProjects(boot.projects || []);
         setFolders(boot.folders || []);
+        getTags()
+          .then((tRes) => {
+            if (tRes.success && tRes.tags) setAvailableTags(tRes.tags);
+          })
+          .catch(() => {});
         if (boot.sync_fingerprint) {
           syncFingerprintRef.current = boot.sync_fingerprint;
         }
@@ -169,13 +177,18 @@ function AppContent() {
 
   const handleAdvanceStatus = async (task: Task) => {
     const latest = tasksRef.current.find((t) => t.id === task.id) || task;
-    const seq = DEFAULT_STATUS_COLUMNS.map((c) => c.id as TaskStatus);
+    const proj = projects.find((p) => p.id === latest.project_id);
+    const cols =
+      proj?.statuses && proj.statuses.length > 0
+        ? proj.statuses.map((s) => ({ id: s.slug as TaskStatus, label: s.label }))
+        : DEFAULT_STATUS_COLUMNS.map((c) => ({ id: c.id as TaskStatus, label: c.label }));
+    const seq = cols.map((c) => c.id);
     const idx = seq.indexOf(latest.status);
     const nextStatus = seq[(idx + 1) % seq.length];
     const prevStatus = latest.status;
 
     setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status: nextStatus } : t)));
-    const label = DEFAULT_STATUS_COLUMNS.find((c) => c.id === nextStatus)?.label || nextStatus;
+    const label = cols.find((c) => c.id === nextStatus)?.label || nextStatus;
     showToast(`Moved to ${label}`);
 
     try {
@@ -230,6 +243,48 @@ function AppContent() {
       }
       showToast('Network error updating priority');
     }
+  };
+
+  const handleUpdateTaskFields = async (
+    taskId: number,
+    patch: {
+      title?: string;
+      description?: string | null;
+      due_date?: string | null;
+      recurrence?: TaskRecurrence;
+      project_id?: number | null;
+      estimated_minutes?: number | null;
+      tags?: (number | string | { id?: number; name: string; color?: string })[];
+    }
+  ) => {
+    try {
+      const res = await updateTask({ id: taskId, ...patch });
+      if (res.success && res.task) {
+        setTasks((prev) => prev.map((t) => (t.id === taskId ? res.task! : t)));
+        if (res.sync_fingerprint) syncFingerprintRef.current = res.sync_fingerprint;
+        showToast('Task updated');
+      } else {
+        showToast(res.message || 'Failed to update task');
+      }
+    } catch {
+      showToast('Network error updating task');
+    }
+  };
+
+  const handleCreateTag = async (name: string): Promise<Tag | null> => {
+    try {
+      const res = await createTag(name);
+      if (res.success && res.tag) {
+        setAvailableTags((prev) =>
+          prev.some((t) => t.id === res.tag!.id) ? prev : [...prev, res.tag!]
+        );
+        return res.tag;
+      }
+      showToast(res.message || 'Failed to create tag');
+    } catch {
+      showToast('Network error creating tag');
+    }
+    return null;
   };
 
   const handleToggleSubtask = async (subtask: Subtask) => {
@@ -666,9 +721,14 @@ function AppContent() {
 
         <TaskDetailModal
           task={selectedTask}
+          projects={projects}
+          availableTags={availableTags}
+          currentUserId={user.id}
           onClose={() => setSelectedTaskId(null)}
           onUpdateStatus={handleUpdateStatus}
           onUpdatePriority={handleUpdatePriority}
+          onUpdateTaskFields={handleUpdateTaskFields}
+          onCreateTag={handleCreateTag}
           onToggleSubtask={handleToggleSubtask}
           onAddSubtask={handleAddSubtask}
           onDeleteSubtask={handleDeleteSubtask}

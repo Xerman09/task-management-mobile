@@ -314,7 +314,10 @@ export default function TasksScreen({
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.boardContent}
         >
-          {DEFAULT_STATUS_COLUMNS.map((col) => {
+          {((activeProject?.statuses && activeProject.statuses.length > 0)
+            ? activeProject.statuses.map((s) => ({ id: s.slug, label: s.label, color: s.color }))
+            : DEFAULT_STATUS_COLUMNS.map((c) => ({ id: c.id, label: c.label, color: c.color }))
+          ).map((col) => {
             const colTasks = filteredTasks.filter((t) => t.status === col.id);
             return (
               <View key={col.id} style={styles.boardColumn}>

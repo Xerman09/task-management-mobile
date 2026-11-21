@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Folder, Project, Subtask, Task, TaskPriority, TaskRecurrence, TaskStatus, User } from './types';
+import { Folder, Project, Subtask, Task, TaskComment, TaskPriority, TaskRecurrence, TaskStatus, Tag, User } from './types';
 
 const TOKEN_KEY = 'taskflow_mobile_token';
 const USER_KEY = 'taskflow_mobile_user';
@@ -214,6 +214,10 @@ export async function updateTask(data: {
   status?: TaskStatus;
   priority?: TaskPriority;
   due_date?: string | null;
+  recurrence?: TaskRecurrence;
+  project_id?: number | null;
+  estimated_minutes?: number | null;
+  tags?: (number | string | { id?: number; name: string; color?: string })[];
 }): Promise<{ success: boolean; message?: string; task?: Task; sync_fingerprint?: string }> {
   return apiFetch('/tasks/update.php', {
     method: 'POST',
@@ -252,6 +256,47 @@ export async function deleteSubtask(
   id: number
 ): Promise<{ success: boolean; message?: string; sync_fingerprint?: string }> {
   return apiFetch('/subtasks/delete.php', {
+    method: 'POST',
+    body: JSON.stringify({ id, auth_token: cachedToken }),
+  });
+}
+
+export async function getTags(): Promise<{ success: boolean; tags?: Tag[]; message?: string }> {
+  return apiFetch('/tags/list.php', { method: 'GET' });
+}
+
+export async function createTag(
+  name: string,
+  color?: string
+): Promise<{ success: boolean; tag?: Tag; message?: string }> {
+  return apiFetch('/tags/create.php', {
+    method: 'POST',
+    body: JSON.stringify({ name, color, auth_token: cachedToken }),
+  });
+}
+
+export async function getTaskComments(taskId: number): Promise<{
+  success: boolean;
+  comments?: TaskComment[];
+  message?: string;
+}> {
+  return apiFetch(`/comments/list.php?task_id=${taskId}`, { method: 'GET' });
+}
+
+export async function createTaskComment(
+  taskId: number,
+  body: string
+): Promise<{ success: boolean; comment?: TaskComment; message?: string }> {
+  return apiFetch('/comments/create.php', {
+    method: 'POST',
+    body: JSON.stringify({ task_id: taskId, body, auth_token: cachedToken }),
+  });
+}
+
+export async function deleteTaskComment(
+  id: number
+): Promise<{ success: boolean; message?: string }> {
+  return apiFetch('/comments/delete.php', {
     method: 'POST',
     body: JSON.stringify({ id, auth_token: cachedToken }),
   });

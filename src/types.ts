@@ -69,3 +69,12 @@ export interface User {
   role: 'admin' | 'member' | 'viewer';
 }
 
+export interface TaskComment {
+  id: number;
+  task_id: number;
+  user_id?: number;
+  user_name?: string;
+  body: string;
+  created_at: string;
+}
+
