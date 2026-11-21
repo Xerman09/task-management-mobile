@@ -130,7 +130,9 @@ export default function CreateTaskModal({
         <View style={styles.sheet}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>Create New Task</Text>
+            <Text style={styles.headerTitle}>
+              {mode === 'ai_plan' ? 'AI Plan Import' : 'Create New Task'}
+            </Text>
             <TouchableOpacity onPress={resetAndClose} style={styles.closeBtn}>
               <Ionicons name="close" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
@@ -213,11 +215,32 @@ export default function CreateTaskModal({
                 <View style={styles.field}>
                   <View style={styles.fieldTop}>
                     <Text style={styles.label}>Paste AI Plan Text *</Text>
-                    {aiPlanText.trim().length > 0 && (
-                      <TouchableOpacity onPress={() => setAiPlanText('')}>
-                        <Text style={styles.clearLink}>Clear</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                      <TouchableOpacity
+                        style={styles.pastePill}
+                        onPress={async () => {
+                          try {
+                            const clip = await Clipboard.getStringAsync();
+                            if (clip && clip.trim()) {
+                              setAiPlanText(clip);
+                              onShowToast('Pasted from clipboard');
+                            } else {
+                              onShowToast('Clipboard is empty');
+                            }
+                          } catch {
+                            onShowToast('Could not read clipboard');
+                          }
+                        }}
+                      >
+                        <Ionicons name="clipboard-outline" size={12} color={colors.cyan} />
+                        <Text style={styles.aiLink}>Paste</Text>
                       </TouchableOpacity>
-                    )}
+                      {aiPlanText.trim().length > 0 && (
+                        <TouchableOpacity onPress={() => setAiPlanText('')}>
+                          <Text style={styles.clearLink}>Clear</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
                   </View>
                   <TextInput
                     style={[styles.input, styles.aiTextArea]}
@@ -363,7 +386,7 @@ export default function CreateTaskModal({
 
             <View style={styles.field}>
               <Text style={styles.label}>Project (Optional)</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+              <View style={styles.chipRow}>
                 <TouchableOpacity
                   style={[styles.chip, projectId === null && styles.chipActive]}
                   onPress={() => setProjectId(null)}
@@ -378,12 +401,15 @@ export default function CreateTaskModal({
                     style={[styles.chip, projectId === proj.id && styles.chipActive]}
                     onPress={() => setProjectId(proj.id)}
                   >
-                    <Text style={[styles.chipText, projectId === proj.id && styles.chipTextActive]}>
+                    <Text
+                      style={[styles.chipText, projectId === proj.id && styles.chipTextActive]}
+                      numberOfLines={1}
+                    >
                       {proj.name}
                     </Text>
                   </TouchableOpacity>
                 ))}
-              </ScrollView>
+              </View>
             </View>
 
             <View style={styles.field}>
@@ -478,7 +504,18 @@ const createStyles = (COLORS: ThemePalette) => StyleSheet.create({
   modeBtnAiActive: { backgroundColor: COLORS.violetSoft, borderWidth: 1, borderColor: COLORS.violetBorder },
   modeText: { fontSize: 12, fontWeight: '700', color: COLORS.textMuted },
   modeTextActive: { color: COLORS.textPrimary },
-  body: { paddingHorizontal: 16, paddingTop: 14 },
+  body: { paddingHorizontal: 16, paddingTop: 14, flexShrink: 1 },
+  pastePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    backgroundColor: COLORS.cyanSoft,
+    borderWidth: 1,
+    borderColor: COLORS.cyanBorder,
+  },
   field: { gap: 6 },
   fieldTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   label: { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary },
