@@ -1,5 +1,18 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Folder, Project, Subtask, Task, TaskComment, TaskPriority, TaskRecurrence, TaskStatus, Tag, User } from './types';
+import {
+  AutomationRule,
+  Folder,
+  Project,
+  Subtask,
+  Tag,
+  Task,
+  TaskComment,
+  TaskPriority,
+  TaskRecurrence,
+  TaskStatus,
+  User,
+  WebhookConfig,
+} from './types';
 
 const TOKEN_KEY = 'taskflow_mobile_token';
 const USER_KEY = 'taskflow_mobile_user';
@@ -363,6 +376,119 @@ export async function deleteProject(
   return apiFetch('/projects/delete.php', {
     method: 'POST',
     body: JSON.stringify({ id, auth_token: cachedToken }),
+  });
+}
+
+export async function getAutomationRules(): Promise<{
+  success: boolean;
+  rules?: AutomationRule[];
+  message?: string;
+}> {
+  return apiFetch('/automations/list.php', { method: 'GET' });
+}
+
+export async function createAutomationRule(data: {
+  name: string;
+  trigger_type: string;
+  trigger_value?: string | null;
+  action_type: string;
+  action_value?: string | null;
+}): Promise<{ success: boolean; rule?: AutomationRule; message?: string }> {
+  return apiFetch('/automations/create.php', {
+    method: 'POST',
+    body: JSON.stringify({ ...data, auth_token: cachedToken }),
+  });
+}
+
+export async function seedAutomationPresets(): Promise<{
+  success: boolean;
+  rules?: AutomationRule[];
+  message?: string;
+}> {
+  return apiFetch('/automations/create.php', {
+    method: 'POST',
+    body: JSON.stringify({ seed_presets: true, auth_token: cachedToken }),
+  });
+}
+
+export async function updateAutomationRule(data: {
+  id: number;
+  is_active?: boolean;
+  name?: string;
+}): Promise<{ success: boolean; rule?: AutomationRule; message?: string }> {
+  return apiFetch('/automations/update.php', {
+    method: 'POST',
+    body: JSON.stringify({ ...data, auth_token: cachedToken }),
+  });
+}
+
+export async function deleteAutomationRule(
+  id: number
+): Promise<{ success: boolean; message?: string }> {
+  return apiFetch('/automations/delete.php', {
+    method: 'POST',
+    body: JSON.stringify({ id, auth_token: cachedToken }),
+  });
+}
+
+export async function getWebhooks(): Promise<{
+  success: boolean;
+  webhooks?: WebhookConfig[];
+  message?: string;
+}> {
+  return apiFetch('/webhooks/list.php', { method: 'GET' });
+}
+
+export async function createWebhook(data: {
+  name: string;
+  provider: 'discord' | 'slack' | 'custom';
+  webhook_url: string;
+  events: string[];
+}): Promise<{ success: boolean; webhook?: WebhookConfig; message?: string }> {
+  return apiFetch('/webhooks/create.php', {
+    method: 'POST',
+    body: JSON.stringify({ ...data, auth_token: cachedToken }),
+  });
+}
+
+export async function updateWebhook(data: {
+  id: number;
+  is_active?: boolean;
+}): Promise<{ success: boolean; webhook?: WebhookConfig; message?: string }> {
+  return apiFetch('/webhooks/update.php', {
+    method: 'POST',
+    body: JSON.stringify({ ...data, auth_token: cachedToken }),
+  });
+}
+
+export async function deleteWebhook(id: number): Promise<{ success: boolean; message?: string }> {
+  return apiFetch('/webhooks/delete.php', {
+    method: 'POST',
+    body: JSON.stringify({ id, auth_token: cachedToken }),
+  });
+}
+
+export async function testWebhook(
+  id: number
+): Promise<{ success: boolean; status_code?: number; message?: string }> {
+  return apiFetch('/webhooks/test.php', {
+    method: 'POST',
+    body: JSON.stringify({ id, auth_token: cachedToken }),
+  });
+}
+
+export async function importTasksBulk(
+  tasks: { title: string; description?: string; status?: string; priority?: string; due_date?: string }[]
+): Promise<{
+  success: boolean;
+  message?: string;
+  imported_count?: number;
+  skipped_count?: number;
+  sync_fingerprint?: string;
+}> {
+  return apiFetch('/tasks/import.php', {
+    method: 'POST',
+    body: JSON.stringify({ tasks, auth_token: cachedToken }),
   });
 }
 

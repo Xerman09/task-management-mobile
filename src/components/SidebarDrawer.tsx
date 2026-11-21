@@ -36,6 +36,7 @@ interface SidebarDrawerProps {
   onSelectQueue: (queue: QueueFilter) => void;
   onSelectProject: (projectId: number | 'all') => void;
   onOpenCreate: (mode: 'single' | 'ai_plan') => void;
+  onOpenTools: (tab: 'automations' | 'integrations' | 'data') => void;
   onRefreshSync: () => void;
   onRequestLogout: () => void;
 }
@@ -58,6 +59,7 @@ export default function SidebarDrawer({
   onSelectQueue,
   onSelectProject,
   onOpenCreate,
+  onOpenTools,
   onRefreshSync,
   onRequestLogout,
 }: SidebarDrawerProps) {
@@ -298,6 +300,14 @@ export default function SidebarDrawer({
                 label="Profile & Sync"
                 active={activeTab === 'profile'}
                 onPress={() => navigateTab('profile')}
+              />
+              <NavItem
+                icon="construct-outline"
+                label="Workspace Tools"
+                onPress={() => {
+                  onClose();
+                  onOpenTools('automations');
+                }}
               />
 
               {/* Smart Queues */}

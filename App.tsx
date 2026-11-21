@@ -34,6 +34,8 @@ import TaskDetailModal from './src/components/TaskDetailModal';
 import ConfirmModal from './src/components/ConfirmModal';
 import SidebarDrawer from './src/components/SidebarDrawer';
 import PomodoroBar from './src/components/PomodoroBar';
+import CommandPaletteModal from './src/components/CommandPaletteModal';
+import WorkspaceToolsModal, { WorkspaceToolTab } from './src/components/WorkspaceToolsModal';
 
 type TabKey = 'home' | 'tasks' | 'calendar' | 'matrix' | 'projects' | 'profile';
 
@@ -66,6 +68,8 @@ function AppContent() {
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pomodoroVisible, setPomodoroVisible] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [toolsTab, setToolsTab] = useState<WorkspaceToolTab | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const { width } = useWindowDimensions();
   const isWide = width >= 900;
@@ -489,6 +493,7 @@ function AppContent() {
       setCreateInitialMode(mode);
       setCreateVisible(true);
     },
+    onOpenTools: (tab: WorkspaceToolTab) => setToolsTab(tab),
     onRefreshSync: () => {
       void loadWorkspaceData(true);
       showToast('Synced with backend');
@@ -555,6 +560,13 @@ function AppContent() {
               </View>
 
               <View style={styles.topRightRow}>
+                <TouchableOpacity
+                  style={styles.liveSyncPill}
+                  onPress={() => setCommandOpen(true)}
+                  accessibilityLabel="Quick search and command palette"
+                >
+                  <Ionicons name="search" size={14} color={colors.textSecondary} />
+                </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.liveSyncPill}
                   onPress={() => setPomodoroVisible((v) => !v)}
@@ -686,6 +698,7 @@ function AppContent() {
                 setCreateInitialMode('ai_plan');
                 setCreateVisible(true);
               }}
+              onOpenTools={(tab) => setToolsTab(tab)}
               onRequestLogout={() => {
                 setConfirmState({
                   visible: true,
@@ -826,6 +839,57 @@ function AppContent() {
         />
 
         {!isWide && <SidebarDrawer visible={sidebarOpen} {...sidebarProps} />}
+
+        <CommandPaletteModal
+          visible={commandOpen}
+          tasks={tasks}
+          projects={projects}
+          onClose={() => setCommandOpen(false)}
+          onSelectTask={(t) => setSelectedTaskId(t.id)}
+          onSelectProject={(pid) => {
+            setSelectedProjectId(pid);
+            setActiveQueue('all');
+            setActiveTab('tasks');
+          }}
+          onRunAction={(action) => {
+            if (action === 'new_task') {
+              setCreateInitialMode('single');
+              setCreateVisible(true);
+            } else if (action === 'ai_plan') {
+              setCreateInitialMode('ai_plan');
+              setCreateVisible(true);
+            } else if (action === 'calendar') {
+              setActiveTab('calendar');
+            } else if (action === 'matrix') {
+              setActiveTab('matrix');
+            } else if (action === 'tools') {
+              setToolsTab('automations');
+            }
+          }}
+        />
+
+        <WorkspaceToolsModal
+          visible={toolsTab !== null}
+          initialTab={toolsTab || 'automations'}
+          tasks={tasks}
+          onClose={() => setToolsTab(null)}
+          onWorkspaceChanged={async () => {
+            await loadWorkspaceData(true);
+          }}
+          onShowToast={showToast}
+          onRequestConfirm={({ title, message, confirmLabel, onConfirm }) => {
+            setConfirmState({
+              visible: true,
+              title,
+              message,
+              confirmLabel,
+              onConfirm: () => {
+                setConfirmState((s) => ({ ...s, visible: false }));
+                onConfirm();
+              },
+            });
+          }}
+        />
       </SafeAreaView>
     </SafeAreaProvider>
   );

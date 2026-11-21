@@ -13,6 +13,7 @@ interface ProfileScreenProps {
   syncStatus: 'synced' | 'syncing' | 'error';
   onRefreshSync: () => void;
   onOpenAiImport: () => void;
+  onOpenTools: (tab: 'automations' | 'integrations' | 'data') => void;
   onRequestLogout: () => void;
 }
 
@@ -23,6 +24,7 @@ export default function ProfileScreen({
   syncStatus,
   onRefreshSync,
   onOpenAiImport,
+  onOpenTools,
   onRequestLogout,
 }: ProfileScreenProps) {
   const { colors, themeId, setThemeId } = useTheme();
@@ -118,6 +120,23 @@ export default function ProfileScreen({
               {syncStatus === 'syncing' ? 'Syncing' : syncStatus === 'error' ? 'Retry' : 'Live'}
             </Text>
           </View>
+        </TouchableOpacity>
+
+        <View style={styles.divider} />
+
+        <TouchableOpacity
+          style={styles.menuRow}
+          onPress={() => onOpenTools('automations')}
+          activeOpacity={0.75}
+        >
+          <View style={[styles.menuIcon, { backgroundColor: colors.cyanSoft }]}>
+            <Ionicons name="construct-outline" size={18} color={colors.cyan} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.menuTitle}>Workspace Tools</Text>
+            <Text style={styles.menuSub}>Automations, Integrations &amp; Data Center</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
         </TouchableOpacity>
       </View>
 

@@ -78,3 +78,22 @@ export interface TaskComment {
   created_at: string;
 }
 
+export interface AutomationRule {
+  id: number;
+  name: string;
+  trigger_type: string;
+  trigger_value?: string | null;
+  action_type: string;
+  action_value?: string | null;
+  is_active: boolean;
+}
+
+export interface WebhookConfig {
+  id: number;
+  name: string;
+  provider: 'discord' | 'slack' | 'custom';
+  webhook_url: string;
+  events: string[];
+  is_active: boolean;
+}
+
