@@ -220,3 +220,4 @@ const createStyles = (COLORS: ThemePalette) =>
     rowMeta: { fontSize: 11, color: COLORS.textMuted },
     dot: { width: 9, height: 9, borderRadius: 5 },
   });
+

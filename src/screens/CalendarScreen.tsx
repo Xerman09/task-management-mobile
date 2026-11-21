@@ -305,3 +305,4 @@ const createStyles = (COLORS: ThemePalette) =>
     prioBadge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999, borderWidth: 1 },
     prioText: { fontSize: 10, fontWeight: '700', textTransform: 'capitalize' },
   });
+

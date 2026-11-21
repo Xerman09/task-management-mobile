@@ -13,3 +13,4 @@ export async function triggerHaptic(type: 'light' | 'success' = 'light') {
     // ignore on unsupported devices
   }
 }
+

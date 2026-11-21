@@ -169,3 +169,4 @@ const createStyles = (COLORS: ThemePalette) =>
     },
     emptyText: { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary },
   });
+

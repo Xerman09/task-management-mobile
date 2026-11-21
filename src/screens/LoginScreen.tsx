@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getApiBaseUrl, loginUser, registerUser, saveServerUrl } from '../api';
 import { ThemePalette } from '../theme';
 import { useTheme } from '../ThemeContext';
+import { TaskFlowIcon } from '../components/TaskFlowLogo';
 import { User } from '../types';
 
 interface LoginScreenProps {
@@ -81,9 +82,7 @@ export default function LoginScreen({ initialServerUrl, onAuthenticated }: Login
       >
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
           <View style={styles.brandBlock}>
-            <View style={styles.logoBox}>
-              <Ionicons name="checkmark-done" size={28} color={colors.cyan} />
-            </View>
+            <TaskFlowIcon size={58} />
             <Text style={styles.brandName}>TaskFlow</Text>
             <Text style={styles.brandSub}>Mobile Workspace • Connected to Backend</Text>
           </View>

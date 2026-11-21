@@ -176,3 +176,4 @@ const createStyles = (COLORS: ThemePalette) =>
     itemTitle: { fontSize: 13, fontWeight: '600', color: COLORS.textPrimary },
     itemMeta: { fontSize: 10, color: COLORS.textMuted, marginTop: 1 },
   });
+

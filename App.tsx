@@ -38,6 +38,7 @@ import PomodoroBar from './src/components/PomodoroBar';
 import CommandPaletteModal from './src/components/CommandPaletteModal';
 import WorkspaceToolsModal, { WorkspaceToolTab } from './src/components/WorkspaceToolsModal';
 import NotificationsModal from './src/components/NotificationsModal';
+import { TaskFlowIcon } from './src/components/TaskFlowLogo';
 import { triggerHaptic } from './src/utils/feedback';
 import { getTodayYMD } from './src/utils/date';
 
@@ -567,11 +568,7 @@ function AppContent() {
                     <Ionicons name="menu-outline" size={20} color={colors.textPrimary} />
                   </TouchableOpacity>
                 )}
-                {!isWide && (
-                  <View style={styles.brandIcon}>
-                    <Ionicons name="checkmark-done" size={16} color={colors.cyan} />
-                  </View>
-                )}
+                {!isWide && <TaskFlowIcon size={28} />}
                 <Text style={styles.brandTitle}>
                   {isWide
                     ? activeTab === 'home'

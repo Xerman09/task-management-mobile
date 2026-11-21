@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeId, ThemePalette, THEMES } from '../theme';
 import { useTheme } from '../ThemeContext';
+import { TaskFlowIcon } from './TaskFlowLogo';
 import { Folder, Project, Task, User } from '../types';
 import { QueueFilter } from '../screens/TasksScreen';
 import { getTodayYMD } from '../utils/date';
@@ -185,9 +186,7 @@ export default function SidebarDrawer({
             {/* Brand + Close Header */}
             <View style={styles.header}>
               <View style={styles.brandRow}>
-                <View style={styles.brandIcon}>
-                  <Ionicons name="checkmark-done" size={17} color={colors.cyan} />
-                </View>
+                <TaskFlowIcon size={32} />
                 <View>
                   <Text style={styles.brandTitle}>TaskFlow</Text>
                   <Text style={styles.brandSub}>Workspace</Text>

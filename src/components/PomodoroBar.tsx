@@ -144,3 +144,4 @@ const createStyles = (COLORS: ThemePalette) =>
       justifyContent: 'center',
     },
   });
+
