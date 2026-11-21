@@ -28,12 +28,11 @@ export default function LoginScreen({ initialServerUrl, onAuthenticated }: Login
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('admin@taskflow.dev');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const [showServerConfig, setShowServerConfig] = useState(false);
-  const [serverUrl, setServerUrl] = useState(initialServerUrl || getApiBaseUrl());
+  const [serverUrl] = useState(initialServerUrl || getApiBaseUrl());
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -67,7 +66,7 @@ export default function LoginScreen({ initialServerUrl, onAuthenticated }: Login
       setError(
         err instanceof Error
           ? `${err.message}. Ensure XAMPP Apache is running.`
-          : 'Could not reach the backend API. Ensure XAMPP Apache is running.'
+          : 'Unable to connect. Please check your connection and try again.'
       );
     } finally {
       setLoading(false);
@@ -84,7 +83,7 @@ export default function LoginScreen({ initialServerUrl, onAuthenticated }: Login
           <View style={styles.brandBlock}>
             <TaskFlowIcon size={58} />
             <Text style={styles.brandName}>TaskFlow</Text>
-            <Text style={styles.brandSub}>Mobile Workspace • Connected to Backend</Text>
+            <Text style={styles.brandSub}>Organize your tasks, projects, and daily focus</Text>
           </View>
 
           <View style={styles.card}>
@@ -193,38 +192,11 @@ export default function LoginScreen({ initialServerUrl, onAuthenticated }: Login
                 </>
               )}
             </TouchableOpacity>
-
-            {/* Optional Server URL Override */}
-            <TouchableOpacity
-              style={styles.serverToggle}
-              onPress={() => setShowServerConfig((p) => !p)}
-            >
-              <Ionicons name="server-outline" size={13} color={colors.textMuted} />
-              <Text style={styles.serverToggleText}>
-                {showServerConfig ? 'Hide API Server URL' : 'Configure API Server URL'}
-              </Text>
-            </TouchableOpacity>
-
-            {showServerConfig && (
-              <View style={styles.field}>
-                <Text style={styles.label}>Backend API URL</Text>
-                <View style={styles.inputWrap}>
-                  <TextInput
-                    style={[styles.input, { fontSize: 12 }]}
-                    value={serverUrl}
-                    onChangeText={setServerUrl}
-                    placeholder="http://localhost/task_management/backend-php/api"
-                    placeholderTextColor={colors.textMuted}
-                    autoCapitalize="none"
-                  />
-                </View>
-              </View>
-            )}
           </View>
 
           <View style={styles.footerBadge}>
             <View style={styles.dot} />
-            <Text style={styles.footerText}>Live MySQL + Cross-Device Sync</Text>
+            <Text style={styles.footerText}>Synced Across All Your Devices</Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

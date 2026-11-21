@@ -388,7 +388,7 @@ export default function CreateTaskModal({
 
             <View style={styles.field}>
               <View style={styles.fieldTop}>
-                <Text style={styles.label}>Due Date (YYYY-MM-DD)</Text>
+                <Text style={styles.label}>Due Date</Text>
                 <TouchableOpacity onPress={() => setDueDate(getTodayYMD())}>
                   <Text style={styles.aiLink}>Set Today</Text>
                 </TouchableOpacity>

@@ -550,7 +550,7 @@ function AppContent() {
     onOpenTools: (tab: WorkspaceToolTab) => setToolsTab(tab),
     onRefreshSync: () => {
       void loadWorkspaceData(true);
-      showToast('Synced with backend');
+      showToast('Workspace synced');
     },
     onRequestLogout: () => {
       setConfirmState({
@@ -647,7 +647,7 @@ function AppContent() {
                     style={styles.liveSyncPill}
                     onPress={() => {
                       void loadWorkspaceData(true);
-                      showToast('Synced with backend');
+                      showToast('Workspace synced');
                     }}
                   >
                     <View style={[styles.liveSyncDot, { backgroundColor: syncColor }]} />
@@ -773,7 +773,7 @@ function AppContent() {
               syncStatus={syncStatus}
               onRefreshSync={() => {
                 void loadWorkspaceData(true);
-                showToast('Synced with backend');
+                showToast('Workspace synced');
               }}
               onOpenAiImport={() => {
                 setCreateInitialMode('ai_plan');

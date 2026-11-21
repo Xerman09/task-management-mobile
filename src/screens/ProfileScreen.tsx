@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { getApiBaseUrl } from '../api';
 import { ThemeId, ThemePalette, THEMES } from '../theme';
 import { useTheme } from '../ThemeContext';
 import { User } from '../types';
@@ -112,7 +111,7 @@ export default function ProfileScreen({
           <View style={{ flex: 1 }}>
             <Text style={styles.menuTitle}>Cross-Device Sync</Text>
             <Text style={styles.menuSub} numberOfLines={1}>
-              {getApiBaseUrl()}
+              All devices stay up to date automatically
             </Text>
           </View>
           <View style={styles.badge}>

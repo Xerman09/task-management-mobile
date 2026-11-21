@@ -250,7 +250,7 @@ export default function TaskDetailModal({
                 />
 
                 <View style={styles.rowBetween}>
-                  <Text style={styles.sectionLabel}>DUE DATE (YYYY-MM-DD)</Text>
+                  <Text style={styles.sectionLabel}>DUE DATE</Text>
                   <View style={{ flexDirection: 'row', gap: 8 }}>
                     <TouchableOpacity onPress={() => setEditDueDate(getTodayYMD())}>
                       <Text style={styles.quickLink}>Today</Text>
