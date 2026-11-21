@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -16,7 +16,8 @@ import {
   updateSubtask,
   updateTask,
 } from './src/api';
-import { COLORS, DEFAULT_STATUS_COLUMNS } from './src/theme';
+import { DEFAULT_STATUS_COLUMNS, ThemePalette } from './src/theme';
+import { ThemeProvider, useTheme } from './src/ThemeContext';
 import { Folder, Project, Subtask, Task, TaskPriority, TaskStatus, User } from './src/types';
 import { ParsedPlanTask } from './src/utils/aiPlanParser';
 import LoginScreen from './src/screens/LoginScreen';
@@ -32,6 +33,16 @@ import SidebarDrawer from './src/components/SidebarDrawer';
 type TabKey = 'home' | 'tasks' | 'projects' | 'profile';
 
 export default function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
+  );
+}
+
+function AppContent() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [booting, setBooting] = useState(true);
   const [initialServerUrl, setInitialServerUrl] = useState<string | undefined>(undefined);
   const [user, setUser] = useState<User | null>(null);
@@ -361,9 +372,9 @@ export default function App() {
   if (booting) {
     return (
       <SafeAreaProvider>
-        <StatusBar style="light" />
+        <StatusBar style={colors.isLight ? 'dark' : 'light'} />
         <View style={styles.bootScreen}>
-          <ActivityIndicator size="large" color={COLORS.cyan} />
+          <ActivityIndicator size="large" color={colors.cyan} />
           <Text style={styles.bootText}>Loading TaskFlow...</Text>
         </View>
       </SafeAreaProvider>
@@ -373,7 +384,7 @@ export default function App() {
   if (!user) {
     return (
       <SafeAreaProvider>
-        <StatusBar style="light" />
+        <StatusBar style={colors.isLight ? 'dark' : 'light'} />
         <LoginScreen
           initialServerUrl={initialServerUrl}
           onAuthenticated={async (loggedInUser) => {
@@ -388,10 +399,10 @@ export default function App() {
 
   const syncColor =
     syncStatus === 'synced'
-      ? COLORS.emerald
+      ? colors.emerald
       : syncStatus === 'syncing'
-        ? COLORS.cyan
-        : COLORS.rose;
+        ? colors.cyan
+        : colors.rose;
   const syncLabel =
     syncStatus === 'synced' ? 'Live' : syncStatus === 'syncing' ? 'Syncing' : 'Retry';
 
@@ -444,7 +455,7 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <StatusBar style="light" />
+      <StatusBar style={colors.isLight ? 'dark' : 'light'} />
       <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
         <View style={styles.shell}>
           {isWide && <SidebarDrawer visible docked {...sidebarProps} />}
@@ -459,12 +470,12 @@ export default function App() {
                     onPress={() => setSidebarOpen(true)}
                     accessibilityLabel="Open sidebar menu"
                   >
-                    <Ionicons name="menu-outline" size={20} color={COLORS.textPrimary} />
+                    <Ionicons name="menu-outline" size={20} color={colors.textPrimary} />
                   </TouchableOpacity>
                 )}
                 {!isWide && (
                   <View style={styles.brandIcon}>
-                    <Ionicons name="checkmark-done" size={16} color={COLORS.cyan} />
+                    <Ionicons name="checkmark-done" size={16} color={colors.cyan} />
                   </View>
                 )}
                 <Text style={styles.brandTitle}>
@@ -628,7 +639,7 @@ export default function App() {
                     <Ionicons
                       name={active ? tab.activeIcon : tab.icon}
                       size={21}
-                      color={active ? COLORS.cyan : COLORS.textMuted}
+                      color={active ? colors.cyan : colors.textMuted}
                     />
                     <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>
                       {tab.label}
@@ -705,7 +716,7 @@ export default function App() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (COLORS: ThemePalette) => StyleSheet.create({
   bootScreen: {
     flex: 1,
     backgroundColor: COLORS.bg,

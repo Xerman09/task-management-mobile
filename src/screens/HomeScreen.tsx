@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, PRIORITY_COLORS } from '../theme';
+import { PRIORITY_COLORS, ThemePalette } from '../theme';
+import { useTheme } from '../ThemeContext';
 import { Subtask, Task, User } from '../types';
 import { formatDisplayDate, getTodayYMD } from '../utils/date';
 
@@ -24,6 +25,8 @@ export default function HomeScreen({
   onToggleSubtask,
   onGoToTasks,
 }: HomeScreenProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const todayStr = getTodayYMD();
   const total = tasks.length;
   const completed = tasks.filter((t) => t.status === 'completed').length;
@@ -88,13 +91,13 @@ export default function HomeScreen({
         <TouchableOpacity style={styles.kpiCard} onPress={() => onGoToTasks('all')} activeOpacity={0.8}>
           <View style={styles.kpiTop}>
             <Text style={styles.kpiLabel}>Completion</Text>
-            <View style={[styles.kpiIconBox, { backgroundColor: COLORS.cyanSoft }]}>
-              <Ionicons name="checkmark-done" size={14} color={COLORS.cyan} />
+            <View style={[styles.kpiIconBox, { backgroundColor: colors.cyanSoft }]}>
+              <Ionicons name="checkmark-done" size={14} color={colors.cyan} />
             </View>
           </View>
           <Text style={styles.kpiValue}>{completionPct}%</Text>
           <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${completionPct}%`, backgroundColor: COLORS.cyan }]} />
+            <View style={[styles.progressFill, { width: `${completionPct}%`, backgroundColor: colors.cyan }]} />
           </View>
           <Text style={styles.kpiSub}>
             {completed} of {total} done
@@ -104,26 +107,26 @@ export default function HomeScreen({
         <TouchableOpacity style={styles.kpiCard} onPress={() => onGoToTasks('today')} activeOpacity={0.8}>
           <View style={styles.kpiTop}>
             <Text style={styles.kpiLabel}>Due Today</Text>
-            <View style={[styles.kpiIconBox, { backgroundColor: COLORS.amberSoft }]}>
-              <Ionicons name="sunny" size={14} color={COLORS.amber} />
+            <View style={[styles.kpiIconBox, { backgroundColor: colors.amberSoft }]}>
+              <Ionicons name="sunny" size={14} color={colors.amber} />
             </View>
           </View>
-          <Text style={[styles.kpiValue, { color: COLORS.amber }]}>{dueTodayTasks.length}</Text>
+          <Text style={[styles.kpiValue, { color: colors.amber }]}>{dueTodayTasks.length}</Text>
           <Text style={styles.kpiSub}>Scheduled for today</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.kpiCard} onPress={() => onGoToTasks('missed')} activeOpacity={0.8}>
           <View style={styles.kpiTop}>
             <Text style={styles.kpiLabel}>Missed</Text>
-            <View style={[styles.kpiIconBox, { backgroundColor: overdueTasks.length > 0 ? COLORS.roseSoft : COLORS.emeraldSoft }]}>
+            <View style={[styles.kpiIconBox, { backgroundColor: overdueTasks.length > 0 ? colors.roseSoft : colors.emeraldSoft }]}>
               <Ionicons
                 name={overdueTasks.length > 0 ? 'alert-circle' : 'shield-checkmark'}
                 size={14}
-                color={overdueTasks.length > 0 ? COLORS.rose : COLORS.emerald}
+                color={overdueTasks.length > 0 ? colors.rose : colors.emerald}
               />
             </View>
           </View>
-          <Text style={[styles.kpiValue, { color: overdueTasks.length > 0 ? COLORS.rose : COLORS.textPrimary }]}>
+          <Text style={[styles.kpiValue, { color: overdueTasks.length > 0 ? colors.rose : colors.textPrimary }]}>
             {overdueTasks.length}
           </Text>
           <Text style={styles.kpiSub}>{overdueTasks.length > 0 ? 'Needs attention' : 'On track'}</Text>
@@ -132,7 +135,7 @@ export default function HomeScreen({
         <TouchableOpacity style={styles.kpiCard} onPress={() => onGoToTasks('all')} activeOpacity={0.8}>
           <View style={styles.kpiTop}>
             <Text style={styles.kpiLabel}>Open Tasks</Text>
-            <View style={[styles.kpiIconBox, { backgroundColor: COLORS.violetSoft }]}>
+            <View style={[styles.kpiIconBox, { backgroundColor: colors.violetSoft }]}>
               <Ionicons name="layers" size={14} color="#c4b5fd" />
             </View>
           </View>
@@ -151,7 +154,7 @@ export default function HomeScreen({
 
       {focusTasks.length === 0 ? (
         <View style={styles.emptyCard}>
-          <Ionicons name="checkmark-circle-outline" size={28} color={COLORS.emerald} />
+          <Ionicons name="checkmark-circle-outline" size={28} color={colors.emerald} />
           <Text style={styles.emptyTitle}>All caught up for today!</Text>
           <Text style={styles.emptySub}>Tap New Task or AI Plan Import above to add work.</Text>
         </View>
@@ -177,7 +180,7 @@ export default function HomeScreen({
                     <Ionicons
                       name={task.status === 'in_progress' ? 'ellipse-outline' : 'radio-button-off'}
                       size={20}
-                      color={task.status === 'in_progress' ? COLORS.amber : COLORS.textMuted}
+                      color={task.status === 'in_progress' ? colors.amber : colors.textMuted}
                     />
                   </TouchableOpacity>
 
@@ -189,7 +192,7 @@ export default function HomeScreen({
                       {task.project_name && (
                         <View style={styles.projectPill}>
                           <View
-                            style={[styles.projectDot, { backgroundColor: task.project_color || COLORS.cyan }]}
+                            style={[styles.projectDot, { backgroundColor: task.project_color || colors.cyan }]}
                           />
                           <Text style={styles.projectText}>{task.project_name}</Text>
                         </View>
@@ -198,7 +201,7 @@ export default function HomeScreen({
                         <Text style={[styles.prioText, { color: prio.text }]}>{task.priority}</Text>
                       </View>
                       {task.due_date && (
-                        <Text style={[styles.dueText, isOverdue && { color: COLORS.rose }]}>
+                        <Text style={[styles.dueText, isOverdue && { color: colors.rose }]}>
                           {task.due_date === todayStr ? 'Today' : formatDisplayDate(task.due_date)}
                         </Text>
                       )}
@@ -209,7 +212,7 @@ export default function HomeScreen({
                 {task.subtasks.length > 0 && (
                   <View style={styles.stepsBox}>
                     <View style={styles.stepsHeader}>
-                      <Ionicons name="list-outline" size={13} color={COLORS.cyan} />
+                      <Ionicons name="list-outline" size={13} color={colors.cyan} />
                       <Text style={styles.stepsLabel}>
                         Steps ({doneSteps}/{task.subtasks.length})
                       </Text>
@@ -224,7 +227,7 @@ export default function HomeScreen({
                         <Ionicons
                           name={sub.is_completed ? 'checkbox' : 'square-outline'}
                           size={16}
-                          color={sub.is_completed ? COLORS.emerald : COLORS.textMuted}
+                          color={sub.is_completed ? colors.emerald : colors.textMuted}
                         />
                         <Text
                           style={[styles.stepText, sub.is_completed && styles.stepTextDone]}
@@ -245,7 +248,7 @@ export default function HomeScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (COLORS: ThemePalette) => StyleSheet.create({
   scroll: { flex: 1, backgroundColor: COLORS.bg },
   content: { padding: 16, paddingBottom: 100, gap: 16, maxWidth: 960, width: '100%', alignSelf: 'center' },
   heroCard: {

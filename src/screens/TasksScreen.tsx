@@ -8,7 +8,8 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, DEFAULT_STATUS_COLUMNS, PRIORITY_COLORS } from '../theme';
+import { DEFAULT_STATUS_COLUMNS, PRIORITY_COLORS, ThemePalette } from '../theme';
+import { useTheme } from '../ThemeContext';
 import { Project, Subtask, Task, TaskStatus } from '../types';
 import { formatDisplayDate, getTodayYMD } from '../utils/date';
 
@@ -39,6 +40,8 @@ export default function TasksScreen({
   onToggleSubtask,
   onAddSubtask,
 }: TasksScreenProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [viewMode, setViewMode] = useState<'list' | 'board'>('list');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedIds, setExpandedIds] = useState<Record<number, boolean>>({});
@@ -83,15 +86,15 @@ export default function TasksScreen({
 
   const renderStatusIcon = (status: TaskStatus) => {
     if (status === 'completed') {
-      return <Ionicons name="checkmark-circle" size={20} color={COLORS.emerald} />;
+      return <Ionicons name="checkmark-circle" size={20} color={colors.emerald} />;
     }
     if (status === 'in_progress') {
-      return <Ionicons name="disc-outline" size={20} color={COLORS.amber} />;
+      return <Ionicons name="disc-outline" size={20} color={colors.amber} />;
     }
     if (status === 'review') {
-      return <Ionicons name="eye-outline" size={20} color={COLORS.indigo} />;
+      return <Ionicons name="eye-outline" size={20} color={colors.indigo} />;
     }
-    return <Ionicons name="ellipse-outline" size={20} color={COLORS.textMuted} />;
+    return <Ionicons name="ellipse-outline" size={20} color={colors.textMuted} />;
   };
 
   return (
@@ -99,17 +102,17 @@ export default function TasksScreen({
       {/* Top Search & View Switcher */}
       <View style={styles.topControls}>
         <View style={styles.searchWrap}>
-          <Ionicons name="search" size={16} color={COLORS.textMuted} />
+          <Ionicons name="search" size={16} color={colors.textMuted} />
           <TextInput
             style={styles.searchInput}
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholder="Search tasks..."
-            placeholderTextColor={COLORS.textMuted}
+            placeholderTextColor={colors.textMuted}
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={16} color={COLORS.textMuted} />
+              <Ionicons name="close-circle" size={16} color={colors.textMuted} />
             </TouchableOpacity>
           )}
         </View>
@@ -122,7 +125,7 @@ export default function TasksScreen({
             <Ionicons
               name="list"
               size={16}
-              color={viewMode === 'list' ? COLORS.textPrimary : COLORS.textMuted}
+              color={viewMode === 'list' ? colors.textPrimary : colors.textMuted}
             />
           </TouchableOpacity>
           <TouchableOpacity
@@ -132,7 +135,7 @@ export default function TasksScreen({
             <Ionicons
               name="grid-outline"
               size={16}
-              color={viewMode === 'board' ? COLORS.textPrimary : COLORS.textMuted}
+              color={viewMode === 'board' ? colors.textPrimary : colors.textMuted}
             />
           </TouchableOpacity>
         </View>
@@ -177,7 +180,7 @@ export default function TasksScreen({
         <ScrollView style={styles.listScroll} contentContainerStyle={styles.listContent}>
           {filteredTasks.length === 0 ? (
             <View style={styles.emptyBox}>
-              <Ionicons name="folder-open-outline" size={28} color={COLORS.textMuted} />
+              <Ionicons name="folder-open-outline" size={28} color={colors.textMuted} />
               <Text style={styles.emptyTitle}>No matching tasks</Text>
               <Text style={styles.emptySub}>Try another filter or tap + to create a task.</Text>
             </View>
@@ -220,7 +223,7 @@ export default function TasksScreen({
                         {task.project_name && (
                           <View style={styles.metaTag}>
                             <View
-                              style={[styles.dot, { backgroundColor: task.project_color || COLORS.cyan }]}
+                              style={[styles.dot, { backgroundColor: task.project_color || colors.cyan }]}
                             />
                             <Text style={styles.metaTagText}>{task.project_name}</Text>
                           </View>
@@ -229,18 +232,18 @@ export default function TasksScreen({
                           <Text style={[styles.prioText, { color: prio.text }]}>{task.priority}</Text>
                         </View>
                         {task.due_date && (
-                          <Text style={[styles.dueText, isOverdue && { color: COLORS.rose }]}>
+                          <Text style={[styles.dueText, isOverdue && { color: colors.rose }]}>
                             {task.due_date === todayStr ? 'Today' : formatDisplayDate(task.due_date)}
                           </Text>
                         )}
                         <TouchableOpacity
                           style={[
                             styles.stepsToggle,
-                            isExpanded && { backgroundColor: COLORS.cyanSoft, borderColor: COLORS.cyanBorder },
+                            isExpanded && { backgroundColor: colors.cyanSoft, borderColor: colors.cyanBorder },
                           ]}
                           onPress={() => toggleExpand(task.id)}
                         >
-                          <Ionicons name="list-outline" size={12} color={COLORS.cyan} />
+                          <Ionicons name="list-outline" size={12} color={colors.cyan} />
                           <Text style={styles.stepsToggleText}>
                             {task.subtasks.length > 0 ? `${doneSteps}/${task.subtasks.length} Steps` : '+ Steps'}
                           </Text>
@@ -260,7 +263,7 @@ export default function TasksScreen({
                           <Ionicons
                             name={sub.is_completed ? 'checkbox' : 'square-outline'}
                             size={16}
-                            color={sub.is_completed ? COLORS.emerald : COLORS.textMuted}
+                            color={sub.is_completed ? colors.emerald : colors.textMuted}
                           />
                           <Text style={[styles.stepText, sub.is_completed && styles.stepTextDone]}>
                             {sub.title}
@@ -274,7 +277,7 @@ export default function TasksScreen({
                           value={inlineSteps[task.id] || ''}
                           onChangeText={(txt) => setInlineSteps((p) => ({ ...p, [task.id]: txt }))}
                           placeholder="Add a step to finish..."
-                          placeholderTextColor={COLORS.textMuted}
+                          placeholderTextColor={colors.textMuted}
                           onSubmitEditing={() => {
                             const val = (inlineSteps[task.id] || '').trim();
                             if (val) {
@@ -352,7 +355,7 @@ export default function TasksScreen({
                             style={styles.advanceBtn}
                             onPress={() => onAdvanceStatus(task)}
                           >
-                            <Ionicons name="arrow-forward" size={13} color={COLORS.cyan} />
+                            <Ionicons name="arrow-forward" size={13} color={colors.cyan} />
                           </TouchableOpacity>
                         </View>
                       </TouchableOpacity>
@@ -368,7 +371,7 @@ export default function TasksScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (COLORS: ThemePalette) => StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
   topControls: {
     flexDirection: 'row',

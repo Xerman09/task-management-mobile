@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getApiBaseUrl } from '../api';
-import { COLORS } from '../theme';
+import { ThemeId, ThemePalette, THEMES } from '../theme';
+import { useTheme } from '../ThemeContext';
 import { User } from '../types';
 
 interface ProfileScreenProps {
@@ -24,6 +25,9 @@ export default function ProfileScreen({
   onOpenAiImport,
   onRequestLogout,
 }: ProfileScreenProps) {
+  const { colors, themeId, setThemeId } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const initials = user.name
     .split(' ')
     .map((p) => p[0])
@@ -52,28 +56,56 @@ export default function ProfileScreen({
           <Text style={styles.statLbl}>Total Tasks</Text>
         </View>
         <View style={styles.statBox}>
-          <Text style={[styles.statVal, { color: COLORS.emerald }]}>{completedTasks}</Text>
+          <Text style={[styles.statVal, { color: colors.emerald }]}>{completedTasks}</Text>
           <Text style={styles.statLbl}>Completed</Text>
+        </View>
+      </View>
+
+      {/* Theme Selection */}
+      <View style={styles.themeCard}>
+        <View style={styles.themeHeader}>
+          <Ionicons name="color-palette-outline" size={16} color={colors.cyan} />
+          <Text style={styles.themeTitle}>Appearance &amp; Theme</Text>
+        </View>
+        <View style={styles.themeGrid}>
+          {(Object.keys(THEMES) as ThemeId[]).map((id) => {
+            const preset = THEMES[id];
+            const active = themeId === id;
+            return (
+              <TouchableOpacity
+                key={id}
+                style={[styles.themeChip, active && styles.themeChipActive]}
+                onPress={() => setThemeId(id)}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.themeSwatch, { backgroundColor: preset.swatch }]} />
+                <Text style={[styles.themeChipText, active && styles.themeChipTextActive]}>
+                  {preset.name}
+                </Text>
+                {active && <Ionicons name="checkmark-circle" size={15} color={colors.cyan} />}
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
 
       <View style={styles.menuCard}>
         <TouchableOpacity style={styles.menuRow} onPress={onOpenAiImport} activeOpacity={0.75}>
-          <View style={[styles.menuIcon, { backgroundColor: COLORS.violetSoft }]}>
-            <Ionicons name="sparkles" size={18} color="#ddd6fe" />
+          <View style={[styles.menuIcon, { backgroundColor: colors.violetSoft }]}>
+            <Ionicons name="sparkles" size={18} color={colors.violet} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.menuTitle}>AI Plan / Text Translator</Text>
             <Text style={styles.menuSub}>Copy AI prompt &amp; import tasks with steps</Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
+          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
         </TouchableOpacity>
 
         <View style={styles.divider} />
 
         <TouchableOpacity style={styles.menuRow} onPress={onRefreshSync} activeOpacity={0.75}>
-          <View style={[styles.menuIcon, { backgroundColor: COLORS.emeraldSoft }]}>
-            <Ionicons name="sync" size={18} color={COLORS.emerald} />
+          <View style={[styles.menuIcon, { backgroundColor: colors.emeraldSoft }]}>
+            <Ionicons name="sync" size={18} color={colors.emerald} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.menuTitle}>Cross-Device Sync</Text>
@@ -90,16 +122,16 @@ export default function ProfileScreen({
       </View>
 
       <TouchableOpacity style={styles.logoutBtn} onPress={onRequestLogout} activeOpacity={0.85}>
-        <Ionicons name="log-out-outline" size={18} color={COLORS.rose} />
+        <Ionicons name="log-out-outline" size={18} color={colors.rose} />
         <Text style={styles.logoutText}>Sign Out</Text>
       </TouchableOpacity>
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (COLORS: ThemePalette) => StyleSheet.create({
   scroll: { flex: 1, backgroundColor: COLORS.bg },
-  content: { padding: 16, paddingBottom: 100, gap: 14 },
+  content: { padding: 16, paddingBottom: 100, gap: 14, maxWidth: 960, width: '100%', alignSelf: 'center' },
   profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -184,5 +216,36 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   logoutText: { fontSize: 14, fontWeight: '700', color: COLORS.rose },
+  themeCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 14,
+    gap: 10,
+  },
+  themeHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  themeTitle: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
+  themeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  themeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 10,
+    backgroundColor: COLORS.card,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    minWidth: '47%',
+    flexGrow: 1,
+  },
+  themeChipActive: {
+    backgroundColor: COLORS.cyanSoft,
+    borderColor: COLORS.cyanBorder,
+  },
+  themeSwatch: { width: 12, height: 12, borderRadius: 6 },
+  themeChipText: { flex: 1, fontSize: 12, fontWeight: '600', color: COLORS.textSecondary },
+  themeChipTextActive: { color: COLORS.textPrimary, fontWeight: '700' },
 });
 

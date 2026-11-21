@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, PRIORITY_COLORS } from '../theme';
+import { PRIORITY_COLORS, ThemePalette } from '../theme';
+import { useTheme } from '../ThemeContext';
 import { Project, TaskPriority } from '../types';
 import { formatDisplayDate, getTodayYMD } from '../utils/date';
 import {
@@ -46,6 +47,8 @@ export default function CreateTaskModal({
   onImportAiPlan,
   onShowToast,
 }: CreateTaskModalProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [mode, setMode] = useState<'single' | 'ai_plan'>(initialMode);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -129,7 +132,7 @@ export default function CreateTaskModal({
           <View style={styles.header}>
             <Text style={styles.headerTitle}>Create New Task</Text>
             <TouchableOpacity onPress={resetAndClose} style={styles.closeBtn}>
-              <Ionicons name="close" size={20} color={COLORS.textSecondary} />
+              <Ionicons name="close" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
@@ -150,7 +153,7 @@ export default function CreateTaskModal({
               <Ionicons
                 name="sparkles"
                 size={13}
-                color={mode === 'ai_plan' ? '#ddd6fe' : COLORS.textMuted}
+                color={mode === 'ai_plan' ? '#ddd6fe' : colors.textMuted}
               />
               <Text style={[styles.modeText, mode === 'ai_plan' && { color: '#ddd6fe' }]}>
                 AI Plan / Text
@@ -192,7 +195,7 @@ export default function CreateTaskModal({
                       <Ionicons
                         name={copiedType === 'format' ? 'checkmark' : 'document-text-outline'}
                         size={14}
-                        color={COLORS.textPrimary}
+                        color={colors.textPrimary}
                       />
                       <Text style={styles.aiFormatBtnText}>
                         {copiedType === 'format' ? 'Format Copied!' : 'Copy Format'}
@@ -222,7 +225,7 @@ export default function CreateTaskModal({
                     value={aiPlanText}
                     onChangeText={setAiPlanText}
                     placeholder={'TASK: Launch Mobile App\nPriority: high\nDue: 2026-11-28\nSteps:\n- [ ] Build login screen\n- [ ] Test on iOS & Android'}
-                    placeholderTextColor={COLORS.textMuted}
+                    placeholderTextColor={colors.textMuted}
                     textAlignVertical="top"
                   />
                 </View>
@@ -264,7 +267,7 @@ export default function CreateTaskModal({
                     value={title}
                     onChangeText={setTitle}
                     placeholder="e.g. Finalize mobile UI prototype"
-                    placeholderTextColor={COLORS.textMuted}
+                    placeholderTextColor={colors.textMuted}
                   />
                 </View>
 
@@ -276,7 +279,7 @@ export default function CreateTaskModal({
                     value={description}
                     onChangeText={setDescription}
                     placeholder="Add details or acceptance criteria..."
-                    placeholderTextColor={COLORS.textMuted}
+                    placeholderTextColor={colors.textMuted}
                     textAlignVertical="top"
                   />
                 </View>
@@ -292,7 +295,7 @@ export default function CreateTaskModal({
                       <TouchableOpacity
                         onPress={() => setSteps((prev) => prev.filter((_, i) => i !== idx))}
                       >
-                        <Ionicons name="close-circle" size={16} color={COLORS.textMuted} />
+                        <Ionicons name="close-circle" size={16} color={colors.textMuted} />
                       </TouchableOpacity>
                     </View>
                   ))}
@@ -302,7 +305,7 @@ export default function CreateTaskModal({
                       value={stepInput}
                       onChangeText={setStepInput}
                       placeholder="Add a step..."
-                      placeholderTextColor={COLORS.textMuted}
+                      placeholderTextColor={colors.textMuted}
                       onSubmitEditing={() => {
                         if (stepInput.trim()) {
                           setSteps((p) => [...p, stepInput.trim()]);
@@ -395,7 +398,7 @@ export default function CreateTaskModal({
                 value={dueDate}
                 onChangeText={setDueDate}
                 placeholder="e.g. 2026-11-28"
-                placeholderTextColor={COLORS.textMuted}
+                placeholderTextColor={colors.textMuted}
               />
             </View>
           </ScrollView>
@@ -430,7 +433,7 @@ export default function CreateTaskModal({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (COLORS: ThemePalette) => StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.72)', justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: COLORS.surface,

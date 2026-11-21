@@ -12,7 +12,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../theme';
+import { ThemeId, ThemePalette, THEMES } from '../theme';
+import { useTheme } from '../ThemeContext';
 import { Folder, Project, Task, User } from '../types';
 import { QueueFilter } from '../screens/TasksScreen';
 import { getTodayYMD } from '../utils/date';
@@ -60,6 +61,8 @@ export default function SidebarDrawer({
   onRefreshSync,
   onRequestLogout,
 }: SidebarDrawerProps) {
+  const { colors, themeId, setThemeId } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [modalVisible, setModalVisible] = useState(visible);
   const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const backdropAnim = useRef(new Animated.Value(0)).current;
@@ -150,10 +153,10 @@ export default function SidebarDrawer({
 
   const syncColor =
     syncStatus === 'synced'
-      ? COLORS.emerald
+      ? colors.emerald
       : syncStatus === 'syncing'
-        ? COLORS.cyan
-        : COLORS.rose;
+        ? colors.cyan
+        : colors.rose;
 
   const syncLabel =
     syncStatus === 'synced' ? 'Live' : syncStatus === 'syncing' ? 'Syncing' : 'Retry';
@@ -177,27 +180,27 @@ export default function SidebarDrawer({
 
   const sidebarContent = (
     <SafeAreaView style={styles.safe} edges={docked ? ['top', 'bottom'] : ['top', 'bottom', 'left']}>
-      {/* Brand + Close Header */}
-      <View style={styles.header}>
-        <View style={styles.brandRow}>
-          <View style={styles.brandIcon}>
-            <Ionicons name="checkmark-done" size={17} color={COLORS.cyan} />
-          </View>
-          <View>
-            <Text style={styles.brandTitle}>TaskFlow</Text>
-            <Text style={styles.brandSub}>Workspace</Text>
-          </View>
-        </View>
-        {!docked && (
-          <TouchableOpacity
-            onPress={onClose}
-            style={styles.closeBtn}
-            accessibilityLabel="Close sidebar"
-          >
-            <Ionicons name="close" size={20} color={COLORS.textSecondary} />
-          </TouchableOpacity>
-        )}
-      </View>
+            {/* Brand + Close Header */}
+            <View style={styles.header}>
+              <View style={styles.brandRow}>
+                <View style={styles.brandIcon}>
+                  <Ionicons name="checkmark-done" size={17} color={colors.cyan} />
+                </View>
+                <View>
+                  <Text style={styles.brandTitle}>TaskFlow</Text>
+                  <Text style={styles.brandSub}>Workspace</Text>
+                </View>
+              </View>
+              {!docked && (
+                <TouchableOpacity
+                  onPress={onClose}
+                  style={styles.closeBtn}
+                  accessibilityLabel="Close sidebar"
+                >
+                  <Ionicons name="close" size={20} color={colors.textSecondary} />
+                </TouchableOpacity>
+              )}
+            </View>
 
             {/* User Card */}
             <TouchableOpacity
@@ -335,7 +338,7 @@ export default function SidebarDrawer({
                     <Ionicons
                       name="folder"
                       size={13}
-                      color={folder.color || COLORS.textMuted}
+                      color={folder.color || colors.textMuted}
                     />
                     <Text style={styles.folderName} numberOfLines={1}>
                       {folder.name}
@@ -361,7 +364,7 @@ export default function SidebarDrawer({
                 <View style={styles.folderGroup}>
                   {groupedFolders.sections.length > 0 && (
                     <View style={styles.folderRow}>
-                      <Ionicons name="albums-outline" size={13} color={COLORS.textMuted} />
+                      <Ionicons name="albums-outline" size={13} color={colors.textMuted} />
                       <Text style={styles.folderName}>Unfiled</Text>
                     </View>
                   )}
@@ -382,6 +385,29 @@ export default function SidebarDrawer({
               )}
             </ScrollView>
 
+            {/* Quick Theme Switcher */}
+            <View style={styles.themeBar}>
+              <Text style={styles.themeBarLabel}>Theme</Text>
+              <View style={styles.themeDots}>
+                {(Object.keys(THEMES) as ThemeId[]).map((id) => {
+                  const preset = THEMES[id];
+                  const active = themeId === id;
+                  return (
+                    <TouchableOpacity
+                      key={id}
+                      onPress={() => setThemeId(id)}
+                      style={[
+                        styles.themeDotBtn,
+                        { backgroundColor: preset.swatch },
+                        active && { borderColor: colors.textPrimary, borderWidth: 2, transform: [{ scale: 1.1 }] },
+                      ]}
+                      accessibilityLabel={`Switch theme to ${preset.name}`}
+                    />
+                  );
+                })}
+              </View>
+            </View>
+
             {/* Footer Actions */}
             <View style={styles.footer}>
               <TouchableOpacity
@@ -391,7 +417,7 @@ export default function SidebarDrawer({
                   onClose();
                 }}
               >
-                <Ionicons name="refresh-outline" size={16} color={COLORS.textSecondary} />
+                <Ionicons name="refresh-outline" size={16} color={colors.textSecondary} />
                 <Text style={styles.footerBtnText}>Sync Now</Text>
               </TouchableOpacity>
 
@@ -453,6 +479,8 @@ function NavItem({
   active?: boolean;
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <TouchableOpacity
       style={[styles.navItem, active && styles.navItemActive]}
@@ -462,7 +490,7 @@ function NavItem({
       <Ionicons
         name={icon}
         size={17}
-        color={active ? COLORS.cyan : COLORS.textSecondary}
+        color={active ? colors.cyan : colors.textSecondary}
       />
       <Text style={[styles.navLabel, active && styles.navLabelActive]} numberOfLines={1}>
         {label}
@@ -501,6 +529,8 @@ function ProjectNavItem({
   active: boolean;
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <TouchableOpacity
       style={[styles.navItem, styles.projectItem, active && styles.navItemActive]}
@@ -510,7 +540,7 @@ function ProjectNavItem({
       <View
         style={[
           styles.projectDot,
-          { backgroundColor: project.color || COLORS.cyan },
+          { backgroundColor: project.color || colors.cyan },
         ]}
       />
       <Text style={[styles.navLabel, active && styles.navLabelActive]} numberOfLines={1}>
@@ -523,7 +553,7 @@ function ProjectNavItem({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (COLORS: ThemePalette) => StyleSheet.create({
   root: {
     flex: 1,
     flexDirection: 'row',
@@ -835,5 +865,31 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: COLORS.textSecondary,
+  },
+  themeBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.borderSubtle,
+  },
+  themeBarLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.textMuted,
+  },
+  themeDots: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  themeDotBtn: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
 });

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Modal,
   ScrollView,
@@ -9,7 +9,8 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, DEFAULT_STATUS_COLUMNS, PRIORITY_COLORS } from '../theme';
+import { DEFAULT_STATUS_COLUMNS, PRIORITY_COLORS, ThemePalette } from '../theme';
+import { useTheme } from '../ThemeContext';
 import { Subtask, Task, TaskPriority, TaskStatus } from '../types';
 import { formatDisplayDate, formatEstimatedMinutes } from '../utils/date';
 
@@ -34,6 +35,8 @@ export default function TaskDetailModal({
   onDeleteSubtask,
   onRequestDeleteTask,
 }: TaskDetailModalProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [newStep, setNewStep] = useState('');
 
   if (!task) return null;
@@ -52,10 +55,10 @@ export default function TaskDetailModal({
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <TouchableOpacity onPress={() => onRequestDeleteTask(task)}>
-                <Ionicons name="trash-outline" size={20} color={COLORS.rose} />
+                <Ionicons name="trash-outline" size={20} color={colors.rose} />
               </TouchableOpacity>
               <TouchableOpacity onPress={onClose}>
-                <Ionicons name="close" size={22} color={COLORS.textSecondary} />
+                <Ionicons name="close" size={22} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
           </View>
@@ -66,19 +69,19 @@ export default function TaskDetailModal({
             <View style={styles.metaRow}>
               {task.project_name && (
                 <View style={styles.metaChip}>
-                  <View style={[styles.dot, { backgroundColor: task.project_color || COLORS.cyan }]} />
+                  <View style={[styles.dot, { backgroundColor: task.project_color || colors.cyan }]} />
                   <Text style={styles.metaText}>{task.project_name}</Text>
                 </View>
               )}
               {task.due_date && (
                 <View style={styles.metaChip}>
-                  <Ionicons name="calendar-outline" size={12} color={COLORS.cyan} />
+                  <Ionicons name="calendar-outline" size={12} color={colors.cyan} />
                   <Text style={styles.metaText}>{formatDisplayDate(task.due_date)}</Text>
                 </View>
               )}
               {task.estimated_minutes && (
                 <View style={styles.metaChip}>
-                  <Ionicons name="time-outline" size={12} color={COLORS.amber} />
+                  <Ionicons name="time-outline" size={12} color={colors.amber} />
                   <Text style={styles.metaText}>
                     Est. {formatEstimatedMinutes(task.estimated_minutes)}
                   </Text>
@@ -102,7 +105,7 @@ export default function TaskDetailModal({
                       onPress={() => onUpdateStatus(task.id, col.id)}
                     >
                       <View style={[styles.dot, { backgroundColor: col.color }]} />
-                      <Text style={[styles.pillText, active && { color: COLORS.textPrimary }]}>
+                      <Text style={[styles.pillText, active && { color: colors.textPrimary }]}>
                         {col.label}
                       </Text>
                     </TouchableOpacity>
@@ -170,14 +173,14 @@ export default function TaskDetailModal({
                       <Ionicons
                         name={sub.is_completed ? 'checkbox' : 'square-outline'}
                         size={18}
-                        color={sub.is_completed ? COLORS.emerald : COLORS.textMuted}
+                        color={sub.is_completed ? colors.emerald : colors.textMuted}
                       />
                       <Text style={[styles.subTitle, sub.is_completed && styles.subTitleDone]}>
                         {sub.title}
                       </Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => onDeleteSubtask(task.id, sub.id)}>
-                      <Ionicons name="close" size={16} color={COLORS.textMuted} />
+                      <Ionicons name="close" size={16} color={colors.textMuted} />
                     </TouchableOpacity>
                   </View>
                 ))}
@@ -189,7 +192,7 @@ export default function TaskDetailModal({
                   value={newStep}
                   onChangeText={setNewStep}
                   placeholder="Add a step to finish this task..."
-                  placeholderTextColor={COLORS.textMuted}
+                  placeholderTextColor={colors.textMuted}
                   onSubmitEditing={() => {
                     if (newStep.trim()) {
                       onAddSubtask(task.id, newStep.trim());
@@ -217,7 +220,7 @@ export default function TaskDetailModal({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (COLORS: ThemePalette) => StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.74)', justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: COLORS.surface,

@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../theme';
+import { ThemePalette } from '../theme';
+import { useTheme } from '../ThemeContext';
 
 interface ConfirmModalProps {
   visible: boolean;
@@ -24,6 +25,8 @@ export default function ConfirmModal({
   onConfirm,
   onCancel,
 }: ConfirmModalProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <Pressable style={styles.backdrop} onPress={onCancel}>
@@ -33,7 +36,7 @@ export default function ConfirmModal({
               <Ionicons
                 name={destructive ? 'warning-outline' : 'help-circle-outline'}
                 size={20}
-                color={destructive ? COLORS.rose : COLORS.cyan}
+                color={destructive ? colors.rose : colors.cyan}
               />
             </View>
             <Text style={styles.title}>{title}</Text>
@@ -59,7 +62,7 @@ export default function ConfirmModal({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (COLORS: ThemePalette) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.76)',

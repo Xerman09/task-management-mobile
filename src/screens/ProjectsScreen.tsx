@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../theme';
+import { ThemePalette } from '../theme';
+import { useTheme } from '../ThemeContext';
 import { Folder, Project, Task } from '../types';
 
 interface ProjectsScreenProps {
@@ -17,6 +18,8 @@ export default function ProjectsScreen({
   tasks,
   onSelectProject,
 }: ProjectsScreenProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Folders &amp; Projects</Text>
@@ -26,7 +29,7 @@ export default function ProjectsScreen({
       <Text style={styles.sectionLabel}>FOLDERS ({folders.length})</Text>
       {folders.length === 0 ? (
         <View style={styles.emptyBox}>
-          <Ionicons name="folder-open-outline" size={22} color={COLORS.textMuted} />
+          <Ionicons name="folder-open-outline" size={22} color={colors.textMuted} />
           <Text style={styles.emptyText}>No folders yet</Text>
         </View>
       ) : (
@@ -58,7 +61,7 @@ export default function ProjectsScreen({
       <Text style={styles.sectionLabel}>PROJECTS ({projects.length})</Text>
       {projects.length === 0 ? (
         <View style={styles.emptyBox}>
-          <Ionicons name="layers-outline" size={24} color={COLORS.textMuted} />
+          <Ionicons name="layers-outline" size={24} color={colors.textMuted} />
           <Text style={styles.emptyText}>No projects created yet</Text>
         </View>
       ) : (
@@ -85,7 +88,7 @@ export default function ProjectsScreen({
                     <Text style={styles.projectFolder}>{proj.folder_name}</Text>
                   )}
                 </View>
-                <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
               </View>
 
               {proj.description && (
@@ -113,7 +116,7 @@ export default function ProjectsScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (COLORS: ThemePalette) => StyleSheet.create({
   scroll: { flex: 1, backgroundColor: COLORS.bg },
   content: { padding: 16, paddingBottom: 100, gap: 12, maxWidth: 960, width: '100%', alignSelf: 'center' },
   title: { fontSize: 20, fontWeight: '800', color: COLORS.textPrimary },

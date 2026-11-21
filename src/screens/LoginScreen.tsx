@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -13,7 +13,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { getApiBaseUrl, loginUser, registerUser, saveServerUrl } from '../api';
-import { COLORS } from '../theme';
+import { ThemePalette } from '../theme';
+import { useTheme } from '../ThemeContext';
 import { User } from '../types';
 
 interface LoginScreenProps {
@@ -22,6 +23,8 @@ interface LoginScreenProps {
 }
 
 export default function LoginScreen({ initialServerUrl, onAuthenticated }: LoginScreenProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('admin@taskflow.dev');
@@ -79,7 +82,7 @@ export default function LoginScreen({ initialServerUrl, onAuthenticated }: Login
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
           <View style={styles.brandBlock}>
             <View style={styles.logoBox}>
-              <Ionicons name="checkmark-done" size={28} color={COLORS.cyan} />
+              <Ionicons name="checkmark-done" size={28} color={colors.cyan} />
             </View>
             <Text style={styles.brandName}>TaskFlow</Text>
             <Text style={styles.brandSub}>Mobile Workspace • Connected to Backend</Text>
@@ -123,13 +126,13 @@ export default function LoginScreen({ initialServerUrl, onAuthenticated }: Login
               <View style={styles.field}>
                 <Text style={styles.label}>Full Name</Text>
                 <View style={styles.inputWrap}>
-                  <Ionicons name="person-outline" size={16} color={COLORS.textMuted} />
+                  <Ionicons name="person-outline" size={16} color={colors.textMuted} />
                   <TextInput
                     style={styles.input}
                     value={name}
                     onChangeText={setName}
                     placeholder="John Doe"
-                    placeholderTextColor={COLORS.textMuted}
+                    placeholderTextColor={colors.textMuted}
                   />
                 </View>
               </View>
@@ -138,13 +141,13 @@ export default function LoginScreen({ initialServerUrl, onAuthenticated }: Login
             <View style={styles.field}>
               <Text style={styles.label}>Email</Text>
               <View style={styles.inputWrap}>
-                <Ionicons name="mail-outline" size={16} color={COLORS.textMuted} />
+                <Ionicons name="mail-outline" size={16} color={colors.textMuted} />
                 <TextInput
                   style={styles.input}
                   value={email}
                   onChangeText={setEmail}
                   placeholder="you@company.com"
-                  placeholderTextColor={COLORS.textMuted}
+                  placeholderTextColor={colors.textMuted}
                   autoCapitalize="none"
                   keyboardType="email-address"
                 />
@@ -154,13 +157,13 @@ export default function LoginScreen({ initialServerUrl, onAuthenticated }: Login
             <View style={styles.field}>
               <Text style={styles.label}>Password</Text>
               <View style={styles.inputWrap}>
-                <Ionicons name="lock-closed-outline" size={16} color={COLORS.textMuted} />
+                <Ionicons name="lock-closed-outline" size={16} color={colors.textMuted} />
                 <TextInput
                   style={styles.input}
                   value={password}
                   onChangeText={setPassword}
                   placeholder="Enter your password"
-                  placeholderTextColor={COLORS.textMuted}
+                  placeholderTextColor={colors.textMuted}
                   secureTextEntry={!showPassword}
                   onSubmitEditing={handleSubmit}
                 />
@@ -168,7 +171,7 @@ export default function LoginScreen({ initialServerUrl, onAuthenticated }: Login
                   <Ionicons
                     name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                     size={18}
-                    color={COLORS.textMuted}
+                    color={colors.textMuted}
                   />
                 </TouchableOpacity>
               </View>
@@ -197,7 +200,7 @@ export default function LoginScreen({ initialServerUrl, onAuthenticated }: Login
               style={styles.serverToggle}
               onPress={() => setShowServerConfig((p) => !p)}
             >
-              <Ionicons name="server-outline" size={13} color={COLORS.textMuted} />
+              <Ionicons name="server-outline" size={13} color={colors.textMuted} />
               <Text style={styles.serverToggleText}>
                 {showServerConfig ? 'Hide API Server URL' : 'Configure API Server URL'}
               </Text>
@@ -212,7 +215,7 @@ export default function LoginScreen({ initialServerUrl, onAuthenticated }: Login
                     value={serverUrl}
                     onChangeText={setServerUrl}
                     placeholder="http://localhost/task_management/backend-php/api"
-                    placeholderTextColor={COLORS.textMuted}
+                    placeholderTextColor={colors.textMuted}
                     autoCapitalize="none"
                   />
                 </View>
@@ -230,7 +233,7 @@ export default function LoginScreen({ initialServerUrl, onAuthenticated }: Login
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (COLORS: ThemePalette) => StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: COLORS.bg,
