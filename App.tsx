@@ -25,14 +25,17 @@ import { ParsedPlanTask } from './src/utils/aiPlanParser';
 import LoginScreen from './src/screens/LoginScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import TasksScreen, { QueueFilter } from './src/screens/TasksScreen';
+import CalendarScreen from './src/screens/CalendarScreen';
+import MatrixScreen from './src/screens/MatrixScreen';
 import ProjectsScreen from './src/screens/ProjectsScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import CreateTaskModal from './src/components/CreateTaskModal';
 import TaskDetailModal from './src/components/TaskDetailModal';
 import ConfirmModal from './src/components/ConfirmModal';
 import SidebarDrawer from './src/components/SidebarDrawer';
+import PomodoroBar from './src/components/PomodoroBar';
 
-type TabKey = 'home' | 'tasks' | 'projects' | 'profile';
+type TabKey = 'home' | 'tasks' | 'calendar' | 'matrix' | 'projects' | 'profile';
 
 export default function App() {
   return (
@@ -62,6 +65,7 @@ function AppContent() {
   const [createInitialMode, setCreateInitialMode] = useState<'single' | 'ai_plan'>('single');
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [pomodoroVisible, setPomodoroVisible] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const { width } = useWindowDimensions();
   const isWide = width >= 900;
@@ -539,14 +543,25 @@ function AppContent() {
                       ? 'Today Overview'
                       : activeTab === 'tasks'
                         ? 'Tasks & Board'
-                        : activeTab === 'projects'
-                          ? 'Folders & Projects'
-                          : 'Profile & Sync'
+                        : activeTab === 'calendar'
+                          ? 'Calendar'
+                          : activeTab === 'matrix'
+                            ? 'Eisenhower Matrix'
+                            : activeTab === 'projects'
+                              ? 'Folders & Projects'
+                              : 'Profile & Sync'
                     : 'TaskFlow'}
                 </Text>
               </View>
 
               <View style={styles.topRightRow}>
+                <TouchableOpacity
+                  style={styles.liveSyncPill}
+                  onPress={() => setPomodoroVisible((v) => !v)}
+                  accessibilityLabel="Toggle Pomodoro Focus Timer"
+                >
+                  <Ionicons name="timer-outline" size={14} color={pomodoroVisible ? colors.cyan : colors.textSecondary} />
+                </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.liveSyncPill}
                   onPress={() => {
@@ -569,6 +584,13 @@ function AppContent() {
                 </TouchableOpacity>
               </View>
             </View>
+
+            {/* Collapsible Pomodoro Focus Timer */}
+            <PomodoroBar
+              visible={pomodoroVisible}
+              onClose={() => setPomodoroVisible(false)}
+              onNotify={showToast}
+            />
 
         {/* Active Screen */}
         <View style={styles.screenArea}>
@@ -602,6 +624,22 @@ function AppContent() {
               onAdvanceStatus={handleAdvanceStatus}
               onToggleSubtask={handleToggleSubtask}
               onAddSubtask={handleAddSubtask}
+            />
+          )}
+
+          {activeTab === 'calendar' && (
+            <CalendarScreen
+              tasks={tasks}
+              onSelectTask={(task) => setSelectedTaskId(task.id)}
+              onAdvanceStatus={handleAdvanceStatus}
+            />
+          )}
+
+          {activeTab === 'matrix' && (
+            <MatrixScreen
+              tasks={tasks}
+              onSelectTask={(task) => setSelectedTaskId(task.id)}
+              onAdvanceStatus={handleAdvanceStatus}
             />
           )}
 
@@ -696,6 +734,7 @@ function AppContent() {
                 [
                   { key: 'home', label: 'Today', icon: 'sunny-outline', activeIcon: 'sunny' },
                   { key: 'tasks', label: 'Tasks', icon: 'checkbox-outline', activeIcon: 'checkbox' },
+                  { key: 'calendar', label: 'Calendar', icon: 'calendar-outline', activeIcon: 'calendar' },
                   { key: 'projects', label: 'Projects', icon: 'folder-outline', activeIcon: 'folder' },
                   { key: 'profile', label: 'Profile', icon: 'person-outline', activeIcon: 'person' },
                 ] as const

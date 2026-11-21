@@ -18,7 +18,7 @@ import { Folder, Project, Task, User } from '../types';
 import { QueueFilter } from '../screens/TasksScreen';
 import { getTodayYMD } from '../utils/date';
 
-type TabKey = 'home' | 'tasks' | 'projects' | 'profile';
+type TabKey = 'home' | 'tasks' | 'calendar' | 'matrix' | 'projects' | 'profile';
 
 interface SidebarDrawerProps {
   visible: boolean;
@@ -273,6 +273,18 @@ export default function SidebarDrawer({
                   onSelectProject('all');
                   navigateQueue('all');
                 }}
+              />
+              <NavItem
+                icon="calendar-outline"
+                label="Calendar"
+                active={activeTab === 'calendar'}
+                onPress={() => navigateTab('calendar')}
+              />
+              <NavItem
+                icon="grid-outline"
+                label="Eisenhower Matrix"
+                active={activeTab === 'matrix'}
+                onPress={() => navigateTab('matrix')}
               />
               <NavItem
                 icon="folder-outline"
