@@ -615,6 +615,22 @@ function AppContent() {
                 setActiveQueue('all');
                 setActiveTab('tasks');
               }}
+              onWorkspaceChanged={async () => {
+                await loadWorkspaceData(true);
+              }}
+              onShowToast={showToast}
+              onRequestConfirm={({ title, message, confirmLabel, onConfirm }) => {
+                setConfirmState({
+                  visible: true,
+                  title,
+                  message,
+                  confirmLabel,
+                  onConfirm: () => {
+                    setConfirmState((s) => ({ ...s, visible: false }));
+                    onConfirm();
+                  },
+                });
+              }}
             />
           )}
 

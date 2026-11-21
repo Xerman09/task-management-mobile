@@ -302,3 +302,67 @@ export async function deleteTaskComment(
   });
 }
 
+export async function createFolder(data: {
+  name: string;
+  color?: string;
+}): Promise<{ success: boolean; folder?: Folder; message?: string; sync_fingerprint?: string }> {
+  return apiFetch('/folders/create.php', {
+    method: 'POST',
+    body: JSON.stringify({ ...data, auth_token: cachedToken }),
+  });
+}
+
+export async function updateFolder(data: {
+  id: number;
+  name?: string;
+  color?: string;
+}): Promise<{ success: boolean; folder?: Folder; message?: string; sync_fingerprint?: string }> {
+  return apiFetch('/folders/update.php', {
+    method: 'POST',
+    body: JSON.stringify({ ...data, auth_token: cachedToken }),
+  });
+}
+
+export async function deleteFolder(
+  id: number
+): Promise<{ success: boolean; message?: string; sync_fingerprint?: string }> {
+  return apiFetch('/folders/delete.php', {
+    method: 'POST',
+    body: JSON.stringify({ id, auth_token: cachedToken }),
+  });
+}
+
+export async function createProject(data: {
+  name: string;
+  description?: string;
+  color?: string;
+  folder_id?: number | null;
+}): Promise<{ success: boolean; project?: Project; message?: string; sync_fingerprint?: string }> {
+  return apiFetch('/projects/create.php', {
+    method: 'POST',
+    body: JSON.stringify({ ...data, auth_token: cachedToken }),
+  });
+}
+
+export async function updateProject(data: {
+  id: number;
+  name?: string;
+  description?: string;
+  color?: string;
+  folder_id?: number | null;
+}): Promise<{ success: boolean; project?: Project; message?: string; sync_fingerprint?: string }> {
+  return apiFetch('/projects/update.php', {
+    method: 'POST',
+    body: JSON.stringify({ ...data, auth_token: cachedToken }),
+  });
+}
+
+export async function deleteProject(
+  id: number
+): Promise<{ success: boolean; message?: string; sync_fingerprint?: string }> {
+  return apiFetch('/projects/delete.php', {
+    method: 'POST',
+    body: JSON.stringify({ id, auth_token: cachedToken }),
+  });
+}
+
