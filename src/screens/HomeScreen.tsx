@@ -80,7 +80,7 @@ export default function HomeScreen({
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-      {/* Gamified Hero Focus Banner */}
+      {/* Compact Gamified Hero Card */}
       <View style={styles.heroCard}>
         <View style={styles.heroTopRow}>
           <View style={{ flex: 1 }}>
@@ -91,86 +91,23 @@ export default function HomeScreen({
               </View>
               <Text style={styles.xpText}>{xp} XP</Text>
             </View>
-            <Text style={styles.greeting}>Welcome back, {user.name.split(' ')[0]}</Text>
+            <Text style={styles.greeting}>Hi, {user.name.split(' ')[0]}</Text>
           </View>
 
           <View style={styles.levelCrest}>
-            <Text style={styles.levelCrestLabel}>LEVEL</Text>
+            <Text style={styles.levelCrestLabel}>LV</Text>
             <Text style={styles.levelCrestNum}>{level}</Text>
           </View>
         </View>
 
-        {/* Scannable Status Pills */}
-        <View style={styles.heroChipsRow}>
-          <View style={styles.heroChip}>
-            <Ionicons name="sunny" size={12} color={colors.amber} />
-            <Text style={styles.heroChipText}>{dueTodayTasks.length} Due Today</Text>
-          </View>
-          <View
-            style={[
-              styles.heroChip,
-              overdueTasks.length > 0 && {
-                backgroundColor: colors.roseSoft,
-                borderColor: 'rgba(239, 68, 68, 0.35)',
-              },
-            ]}
-          >
-            <Ionicons
-              name="flame"
-              size={12}
-              color={overdueTasks.length > 0 ? colors.rose : colors.textMuted}
-            />
-            <Text
-              style={[
-                styles.heroChipText,
-                overdueTasks.length > 0 && { color: '#fca5a5' },
-              ]}
-            >
-              {overdueTasks.length} Overdue
-            </Text>
-          </View>
-          <View style={styles.heroChip}>
-            <Ionicons name="star" size={12} color={colors.emerald} />
-            <Text style={styles.heroChipText}>{perfectDays} Perfect</Text>
-          </View>
-        </View>
-
-        {/* Dual Gamified Progress Bars: Today's Quest + Level XP */}
+        {/* Single Clean Level XP Bar */}
         <View style={styles.barsWrap}>
           <View style={styles.barHeaderRow}>
             <Text style={styles.barLabel}>
               {todayAllTasks.length > 0
-                ? `Today's Quest (${todayDone}/${todayAllTasks.length})`
-                : `Workspace Quest (${completed}/${total})`}
+                ? `Today's Quest: ${todayDone}/${todayAllTasks.length} (${todayPct}%)`
+                : `Level ${level + 1} Progress`}
             </Text>
-            <Text
-              style={[
-                styles.barVal,
-                todayPct === 100 && todayAllTasks.length > 0 && { color: colors.emerald },
-              ]}
-            >
-              {todayAllTasks.length > 0
-                ? todayPct === 100
-                  ? 'Perfect Day! +50 XP'
-                  : `${todayPct}%`
-                : `${completionPct}%`}
-            </Text>
-          </View>
-          <View style={styles.heroProgressTrack}>
-            <View
-              style={[
-                styles.heroProgressFill,
-                {
-                  width: `${todayAllTasks.length > 0 ? todayPct : completionPct}%`,
-                  backgroundColor:
-                    todayAllTasks.length > 0 && todayPct === 100 ? colors.emerald : colors.cyan,
-                },
-              ]}
-            />
-          </View>
-
-          <View style={[styles.barHeaderRow, { marginTop: 4 }]}>
-            <Text style={styles.barLabel}>Level {level + 1} Progress</Text>
             <Text style={styles.barVal}>{xpInLevel}/250 XP</Text>
           </View>
           <View style={styles.heroProgressTrack}>
@@ -190,7 +127,7 @@ export default function HomeScreen({
             activeOpacity={0.85}
             onPress={() => onOpenCreate('single')}
           >
-            <Ionicons name="add-circle" size={18} color="#09090b" />
+            <Ionicons name="add-circle" size={17} color="#09090b" />
             <Text style={styles.actionPrimaryText}>New Task</Text>
           </TouchableOpacity>
 
@@ -199,67 +136,39 @@ export default function HomeScreen({
             activeOpacity={0.85}
             onPress={() => onOpenCreate('ai_plan')}
           >
-            <Ionicons name="sparkles" size={16} color="#ddd6fe" />
-            <Text style={styles.actionAiText}>AI Plan Import</Text>
+            <Ionicons name="sparkles" size={15} color="#ddd6fe" />
+            <Text style={styles.actionAiText}>AI Plan</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* KPI Grid */}
-      <View style={styles.kpiGrid}>
-        <TouchableOpacity style={styles.kpiCard} onPress={() => onGoToTasks('all')} activeOpacity={0.8}>
-          <View style={styles.kpiTop}>
-            <Text style={styles.kpiLabel}>Completion</Text>
-            <View style={[styles.kpiIconBox, { backgroundColor: colors.cyanSoft }]}>
-              <Ionicons name="checkmark-done" size={14} color={colors.cyan} />
-            </View>
-          </View>
-          <Text style={styles.kpiValue}>{completionPct}%</Text>
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${completionPct}%`, backgroundColor: colors.cyan }]} />
-          </View>
-          <Text style={styles.kpiSub}>
-            {completed} of {total} done
-          </Text>
+      {/* Compact 1-Row Stat Strip */}
+      <View style={styles.statStrip}>
+        <TouchableOpacity style={styles.statStripItem} onPress={() => onGoToTasks('today')}>
+          <Text style={[styles.statStripVal, { color: colors.amber }]}>{dueTodayTasks.length}</Text>
+          <Text style={styles.statStripLbl}>Today</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity style={styles.kpiCard} onPress={() => onGoToTasks('today')} activeOpacity={0.8}>
-          <View style={styles.kpiTop}>
-            <Text style={styles.kpiLabel}>Due Today</Text>
-            <View style={[styles.kpiIconBox, { backgroundColor: colors.amberSoft }]}>
-              <Ionicons name="sunny" size={14} color={colors.amber} />
-            </View>
-          </View>
-          <Text style={[styles.kpiValue, { color: colors.amber }]}>{dueTodayTasks.length}</Text>
-          <Text style={styles.kpiSub}>Scheduled for today</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.kpiCard} onPress={() => onGoToTasks('missed')} activeOpacity={0.8}>
-          <View style={styles.kpiTop}>
-            <Text style={styles.kpiLabel}>Missed</Text>
-            <View style={[styles.kpiIconBox, { backgroundColor: overdueTasks.length > 0 ? colors.roseSoft : colors.emeraldSoft }]}>
-              <Ionicons
-                name={overdueTasks.length > 0 ? 'alert-circle' : 'shield-checkmark'}
-                size={14}
-                color={overdueTasks.length > 0 ? colors.rose : colors.emerald}
-              />
-            </View>
-          </View>
-          <Text style={[styles.kpiValue, { color: overdueTasks.length > 0 ? colors.rose : colors.textPrimary }]}>
+        <View style={styles.statDivider} />
+        <TouchableOpacity style={styles.statStripItem} onPress={() => onGoToTasks('missed')}>
+          <Text
+            style={[
+              styles.statStripVal,
+              { color: overdueTasks.length > 0 ? colors.rose : colors.textPrimary },
+            ]}
+          >
             {overdueTasks.length}
           </Text>
-          <Text style={styles.kpiSub}>{overdueTasks.length > 0 ? 'Needs attention' : 'On track'}</Text>
+          <Text style={styles.statStripLbl}>Missed</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity style={styles.kpiCard} onPress={() => onGoToTasks('all')} activeOpacity={0.8}>
-          <View style={styles.kpiTop}>
-            <Text style={styles.kpiLabel}>Open Tasks</Text>
-            <View style={[styles.kpiIconBox, { backgroundColor: colors.violetSoft }]}>
-              <Ionicons name="layers" size={14} color="#c4b5fd" />
-            </View>
-          </View>
-          <Text style={styles.kpiValue}>{total - completed}</Text>
-          <Text style={styles.kpiSub}>Active workspace items</Text>
+        <View style={styles.statDivider} />
+        <TouchableOpacity style={styles.statStripItem} onPress={() => onGoToTasks('all')}>
+          <Text style={styles.statStripVal}>{total - completed}</Text>
+          <Text style={styles.statStripLbl}>Open</Text>
+        </TouchableOpacity>
+        <View style={styles.statDivider} />
+        <TouchableOpacity style={styles.statStripItem} onPress={() => onGoToTasks('all')}>
+          <Text style={[styles.statStripVal, { color: colors.cyan }]}>{completionPct}%</Text>
+          <Text style={styles.statStripLbl}>Done</Text>
         </TouchableOpacity>
       </View>
 
@@ -417,9 +326,9 @@ const createStyles = (COLORS: ThemePalette) => StyleSheet.create({
   levelPillText: { fontSize: 10, fontWeight: '800', color: COLORS.amber, letterSpacing: 0.5 },
   xpText: { fontSize: 11, fontWeight: '800', color: COLORS.cyan },
   levelCrest: {
-    width: 58,
-    height: 58,
-    borderRadius: 16,
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     backgroundColor: COLORS.amberSoft,
     borderWidth: 1.5,
     borderColor: 'rgba(245, 158, 11, 0.45)',
@@ -427,7 +336,20 @@ const createStyles = (COLORS: ThemePalette) => StyleSheet.create({
     justifyContent: 'center',
   },
   levelCrestLabel: { fontSize: 9, fontWeight: '800', color: COLORS.amber, letterSpacing: 0.6 },
-  levelCrestNum: { fontSize: 21, fontWeight: '900', color: COLORS.textPrimary, lineHeight: 23 },
+  levelCrestNum: { fontSize: 19, fontWeight: '900', color: COLORS.textPrimary, lineHeight: 21 },
+  statStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingVertical: 11,
+  },
+  statStripItem: { flex: 1, alignItems: 'center', gap: 2 },
+  statStripVal: { fontSize: 17, fontWeight: '800', color: COLORS.textPrimary },
+  statStripLbl: { fontSize: 10, fontWeight: '600', color: COLORS.textMuted },
+  statDivider: { width: 1, height: 24, backgroundColor: COLORS.borderSubtle },
   heroChipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   heroChip: {
     flexDirection: 'row',
