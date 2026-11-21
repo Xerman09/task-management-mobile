@@ -917,24 +917,7 @@ function AppContent() {
                 );
               })}
             </View>
-            <NotificationsModal
-          visible={notificationsOpen}
-          tasks={tasks}
-          onClose={() => setNotificationsOpen(false)}
-          onSelectTask={(t) => setSelectedTaskId(t.id)}
-        />
-
-        <UpdateModal
-          visible={Boolean(updateInfo?.visible)}
-          currentVersion={`v${BUILD_INFO.version}`}
-          latestVersion={updateInfo?.latestVersion || 'latest'}
-          apkUrl={
-            updateInfo?.apkUrl ||
-            'https://github.com/Xerman09/task-management-mobile/releases/download/latest-apk/TaskFlow.apk'
-          }
-          onDismiss={() => setUpdateInfo((u) => (u ? { ...u, visible: false } : null))}
-        />
-      </SafeAreaView>
+          </SafeAreaView>
         )}
           </View>
         </View>
