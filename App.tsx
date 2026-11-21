@@ -1,11 +1,23 @@
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import {
+  batchCreateTasks,
+  checkSyncState,
+  clearSession,
+  createSubtask,
+  createTask,
+  deleteSubtask,
+  deleteTask,
+  getDashboardBootstrap,
+  loadPersistedConfig,
+  updateSubtask,
+  updateTask,
+} from './src/api';
 import { COLORS, DEFAULT_STATUS_COLUMNS } from './src/theme';
-import { MOCK_FOLDERS, MOCK_PROJECTS, MOCK_TASKS, MOCK_USER } from './src/data/mockData';
-import { Subtask, Task, TaskPriority, TaskStatus, User } from './src/types';
+import { Folder, Project, Subtask, Task, TaskPriority, TaskStatus, User } from './src/types';
 import { ParsedPlanTask } from './src/utils/aiPlanParser';
 import LoginScreen from './src/screens/LoginScreen';
 import HomeScreen from './src/screens/HomeScreen';
@@ -19,9 +31,15 @@ import ConfirmModal from './src/components/ConfirmModal';
 type TabKey = 'home' | 'tasks' | 'projects' | 'profile';
 
 export default function App() {
-  const [user, setUser] = useState<User | null>(MOCK_USER);
+  const [booting, setBooting] = useState(true);
+  const [initialServerUrl, setInitialServerUrl] = useState<string | undefined>(undefined);
+  const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>('home');
-  const [tasks, setTasks] = useState<Task[]>(MOCK_TASKS);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'error'>('synced');
+
   const [activeQueue, setActiveQueue] = useState<QueueFilter>('all');
   const [selectedProjectId, setSelectedProjectId] = useState<number | 'all'>('all');
 
@@ -29,7 +47,15 @@ export default function App() {
   const [createInitialMode, setCreateInitialMode] = useState<'single' | 'ai_plan'>('single');
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const syncFingerprintRef = useRef<string>('');
+  const isSyncingRef = useRef<boolean>(false);
+  const tasksRef = useRef<Task[]>([]);
+
+  useEffect(() => {
+    tasksRef.current = tasks;
+  }, [tasks]);
 
   const [confirmState, setConfirmState] = useState<{
     visible: boolean;
@@ -45,70 +71,231 @@ export default function App() {
     onConfirm: () => {},
   });
 
-  const showToast = (msg: string) => {
+  const showToast = useCallback((msg: string) => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
     setToastMsg(msg);
-    toastTimer.current = setTimeout(() => setToastMsg(null), 2800);
-  };
+    toastTimer.current = setTimeout(() => setToastMsg(null), 3000);
+  }, []);
 
-  const handleAdvanceStatus = (task: Task) => {
+  const loadWorkspaceData = useCallback(async (silent = false) => {
+    if (silent) setSyncStatus('syncing');
+    try {
+      const boot = await getDashboardBootstrap();
+      if (boot.success) {
+        if (boot.user) setUser(boot.user);
+        setTasks(boot.tasks || []);
+        setProjects(boot.projects || []);
+        setFolders(boot.folders || []);
+        if (boot.sync_fingerprint) {
+          syncFingerprintRef.current = boot.sync_fingerprint;
+        }
+        setSyncStatus('synced');
+        return true;
+      }
+      if (boot.message?.toLowerCase().includes('unauthorized')) {
+        await clearSession();
+        setUser(null);
+      } else {
+        setSyncStatus('error');
+      }
+      return false;
+    } catch {
+      setSyncStatus('error');
+      return false;
+    }
+  }, []);
+
+  // Restore saved session on app startup
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const cfg = await loadPersistedConfig();
+        if (!mounted) return;
+        setInitialServerUrl(cfg.serverUrl);
+        if (cfg.token) {
+          if (cfg.user) setUser(cfg.user);
+          await loadWorkspaceData(false);
+        }
+      } finally {
+        if (mounted) setBooting(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [loadWorkspaceData]);
+
+  // Real-time 3-second heartbeat sync with backend-php
+  useEffect(() => {
+    if (!user) return;
+    const interval = setInterval(async () => {
+      if (isSyncingRef.current) return;
+      isSyncingRef.current = true;
+      try {
+        const res = await checkSyncState(syncFingerprintRef.current);
+        if (res.success && res.fingerprint) {
+          if (!syncFingerprintRef.current) {
+            syncFingerprintRef.current = res.fingerprint;
+          } else if (res.has_changes) {
+            syncFingerprintRef.current = res.fingerprint;
+            await loadWorkspaceData(true);
+          }
+        }
+      } catch {
+        // silent network hiccup
+      } finally {
+        isSyncingRef.current = false;
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [user, loadWorkspaceData]);
+
+  const handleAdvanceStatus = async (task: Task) => {
+    const latest = tasksRef.current.find((t) => t.id === task.id) || task;
     const seq = DEFAULT_STATUS_COLUMNS.map((c) => c.id as TaskStatus);
-    const idx = seq.indexOf(task.status);
+    const idx = seq.indexOf(latest.status);
     const nextStatus = seq[(idx + 1) % seq.length];
+    const prevStatus = latest.status;
+
     setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status: nextStatus } : t)));
     const label = DEFAULT_STATUS_COLUMNS.find((c) => c.id === nextStatus)?.label || nextStatus;
     showToast(`Moved to ${label}`);
+
+    try {
+      const res = await updateTask({ id: task.id, status: nextStatus });
+      if (!res.success) {
+        setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status: prevStatus } : t)));
+        showToast(res.message || 'Failed to update status');
+      } else if (res.sync_fingerprint) {
+        syncFingerprintRef.current = res.sync_fingerprint;
+      }
+    } catch {
+      setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status: prevStatus } : t)));
+      showToast('Network error updating status');
+    }
   };
 
-  const handleToggleSubtask = (subtask: Subtask) => {
+  const handleUpdateStatus = async (taskId: number, status: TaskStatus) => {
+    const prevStatus = tasksRef.current.find((t) => t.id === taskId)?.status;
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status } : t)));
+    try {
+      const res = await updateTask({ id: taskId, status });
+      if (!res.success && prevStatus) {
+        setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: prevStatus } : t)));
+        showToast(res.message || 'Failed to update status');
+      } else {
+        if (res.sync_fingerprint) syncFingerprintRef.current = res.sync_fingerprint;
+        showToast('Status updated');
+      }
+    } catch {
+      if (prevStatus) {
+        setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: prevStatus } : t)));
+      }
+      showToast('Network error updating status');
+    }
+  };
+
+  const handleUpdatePriority = async (taskId: number, priority: TaskPriority) => {
+    const prevPriority = tasksRef.current.find((t) => t.id === taskId)?.priority;
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, priority } : t)));
+    try {
+      const res = await updateTask({ id: taskId, priority });
+      if (!res.success && prevPriority) {
+        setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, priority: prevPriority } : t)));
+        showToast(res.message || 'Failed to update priority');
+      } else {
+        if (res.sync_fingerprint) syncFingerprintRef.current = res.sync_fingerprint;
+        showToast('Priority updated');
+      }
+    } catch {
+      if (prevPriority) {
+        setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, priority: prevPriority } : t)));
+      }
+      showToast('Network error updating priority');
+    }
+  };
+
+  const handleToggleSubtask = async (subtask: Subtask) => {
+    const nextCompleted = !subtask.is_completed;
     setTasks((prev) =>
       prev.map((t) =>
         t.id === subtask.task_id
           ? {
               ...t,
               subtasks: t.subtasks.map((s) =>
-                s.id === subtask.id ? { ...s, is_completed: !s.is_completed } : s
+                s.id === subtask.id ? { ...s, is_completed: nextCompleted } : s
               ),
             }
           : t
       )
     );
+
+    try {
+      const res = await updateSubtask(subtask.id, { is_completed: nextCompleted });
+      if (!res.success) {
+        setTasks((prev) =>
+          prev.map((t) =>
+            t.id === subtask.task_id
+              ? {
+                  ...t,
+                  subtasks: t.subtasks.map((s) =>
+                    s.id === subtask.id ? { ...s, is_completed: !nextCompleted } : s
+                  ),
+                }
+              : t
+          )
+        );
+        showToast(res.message || 'Failed to update step');
+      } else if (res.sync_fingerprint) {
+        syncFingerprintRef.current = res.sync_fingerprint;
+      }
+    } catch {
+      showToast('Network error updating step');
+    }
   };
 
-  const handleAddSubtask = (taskId: number, title: string) => {
+  const handleAddSubtask = async (taskId: number, title: string) => {
+    try {
+      const res = await createSubtask(taskId, title);
+      if (res.success && res.subtask) {
+        if (res.sync_fingerprint) syncFingerprintRef.current = res.sync_fingerprint;
+        const created = res.subtask;
+        setTasks((prev) =>
+          prev.map((t) => (t.id === taskId ? { ...t, subtasks: [...t.subtasks, created] } : t))
+        );
+        showToast('Step added');
+      } else {
+        showToast(res.message || 'Failed to add step');
+      }
+    } catch {
+      showToast('Network error adding step');
+    }
+  };
+
+  const handleDeleteSubtask = async (taskId: number, subtaskId: number) => {
+    const prevTasks = tasksRef.current;
     setTasks((prev) =>
       prev.map((t) =>
-        t.id === taskId
-          ? {
-              ...t,
-              subtasks: [
-                ...t.subtasks,
-                {
-                  id: Date.now() + Math.floor(Math.random() * 1000),
-                  task_id: taskId,
-                  title,
-                  is_completed: false,
-                  position: t.subtasks.length + 1,
-                },
-              ],
-            }
-          : t
+        t.id === taskId ? { ...t, subtasks: t.subtasks.filter((s) => s.id !== subtaskId) } : t
       )
     );
-    showToast('Step added');
+    try {
+      const res = await deleteSubtask(subtaskId);
+      if (!res.success) {
+        setTasks(prevTasks);
+        showToast(res.message || 'Failed to delete step');
+      } else if (res.sync_fingerprint) {
+        syncFingerprintRef.current = res.sync_fingerprint;
+      }
+    } catch {
+      setTasks(prevTasks);
+      showToast('Network error deleting step');
+    }
   };
 
-  const handleDeleteSubtask = (taskId: number, subtaskId: number) => {
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === taskId
-          ? { ...t, subtasks: t.subtasks.filter((s) => s.id !== subtaskId) }
-          : t
-      )
-    );
-  };
-
-  const handleCreateSingle = (data: {
+  const handleCreateSingle = async (data: {
     title: string;
     description?: string;
     priority: TaskPriority;
@@ -116,74 +303,79 @@ export default function App() {
     dueDate?: string;
     steps: string[];
   }) => {
-    const newId = Date.now();
-    const proj = data.projectId ? MOCK_PROJECTS.find((p) => p.id === data.projectId) : null;
-    const created: Task = {
-      id: newId,
-      project_id: data.projectId,
-      project_name: proj?.name || null,
-      project_color: proj?.color || null,
-      title: data.title,
-      description: data.description || null,
-      status: 'todo',
-      priority: data.priority,
-      category: 'Work',
-      due_date: data.dueDate || null,
-      recurrence: 'none',
-      subtasks: data.steps.map((s, i) => ({
-        id: newId + i + 1,
-        task_id: newId,
-        title: s,
-        is_completed: false,
-        position: i + 1,
-      })),
-    };
-    setTasks((prev) => [created, ...prev]);
-    showToast('Task created');
+    try {
+      const res = await createTask({
+        title: data.title,
+        description: data.description,
+        priority: data.priority,
+        project_id: data.projectId,
+        due_date: data.dueDate,
+        subtasks: data.steps,
+      });
+      if (res.success && res.task) {
+        if (res.sync_fingerprint) syncFingerprintRef.current = res.sync_fingerprint;
+        setTasks((prev) => [res.task!, ...prev]);
+        showToast('Task created');
+      } else {
+        showToast(res.message || 'Failed to create task');
+      }
+    } catch {
+      showToast('Network error creating task');
+    }
   };
 
-  const handleImportAiPlan = (items: ParsedPlanTask[], projectId: number | null) => {
-    const baseId = Date.now();
-    const proj = projectId ? MOCK_PROJECTS.find((p) => p.id === projectId) : null;
-    const newTasks: Task[] = items.map((pt, idx) => {
-      const tId = baseId + idx * 100;
-      return {
-        id: tId,
-        project_id: projectId,
-        project_name: proj?.name || null,
-        project_color: proj?.color || null,
-        title: pt.title,
-        description: pt.description || null,
-        status: 'todo',
-        priority: pt.priority,
-        category: pt.category || 'Work',
-        due_date: pt.due_date || null,
-        estimated_minutes: pt.estimated_minutes ?? null,
-        recurrence: 'none',
-        subtasks: pt.steps.map((s, sIdx) => ({
-          id: tId + sIdx + 1,
-          task_id: tId,
-          title: s,
-          is_completed: false,
-          position: sIdx + 1,
-        })),
-      };
-    });
-    setTasks((prev) => [...newTasks, ...prev]);
-    const totalSteps = items.reduce((sum, item) => sum + item.steps.length, 0);
-    showToast(`Imported ${items.length} tasks with ${totalSteps} steps`);
+  const handleImportAiPlan = async (items: ParsedPlanTask[], projectId: number | null) => {
+    try {
+      const res = await batchCreateTasks(
+        items.map((pt) => ({
+          title: pt.title,
+          description: pt.description,
+          priority: pt.priority,
+          category: pt.category || 'Work',
+          due_date: pt.due_date,
+          project_id: projectId,
+          subtasks: pt.steps,
+          estimated_minutes: pt.estimated_minutes,
+        }))
+      );
+      if (res.success && res.tasks) {
+        if (res.sync_fingerprint) syncFingerprintRef.current = res.sync_fingerprint;
+        const reversed = res.tasks.slice().reverse();
+        setTasks((prev) => [...reversed, ...prev]);
+        const totalSteps = items.reduce((sum, item) => sum + item.steps.length, 0);
+        showToast(`Imported ${res.tasks.length} tasks with ${totalSteps} steps`);
+      } else {
+        showToast(res.message || 'Failed to import AI plan');
+      }
+    } catch {
+      showToast('Network error importing AI plan');
+    }
   };
 
   const selectedTask = selectedTaskId ? tasks.find((t) => t.id === selectedTaskId) || null : null;
+
+  if (booting) {
+    return (
+      <SafeAreaProvider>
+        <StatusBar style="light" />
+        <View style={styles.bootScreen}>
+          <ActivityIndicator size="large" color={COLORS.cyan} />
+          <Text style={styles.bootText}>Loading TaskFlow...</Text>
+        </View>
+      </SafeAreaProvider>
+    );
+  }
 
   if (!user) {
     return (
       <SafeAreaProvider>
         <StatusBar style="light" />
         <LoginScreen
-          onLogin={(email) => {
-            setUser({ ...MOCK_USER, email });
+          initialServerUrl={initialServerUrl}
+          onAuthenticated={async (loggedInUser) => {
+            setUser(loggedInUser);
             setActiveTab('home');
+            await loadWorkspaceData(false);
           }}
         />
       </SafeAreaProvider>
@@ -237,7 +429,7 @@ export default function App() {
           {activeTab === 'tasks' && (
             <TasksScreen
               tasks={tasks}
-              projects={MOCK_PROJECTS}
+              projects={projects}
               activeQueue={activeQueue}
               selectedProjectId={selectedProjectId}
               onChangeQueue={setActiveQueue}
@@ -251,8 +443,8 @@ export default function App() {
 
           {activeTab === 'projects' && (
             <ProjectsScreen
-              folders={MOCK_FOLDERS}
-              projects={MOCK_PROJECTS}
+              folders={folders}
+              projects={projects}
               tasks={tasks}
               onSelectProject={(pid) => {
                 setSelectedProjectId(pid);
@@ -267,6 +459,11 @@ export default function App() {
               user={user}
               totalTasks={tasks.length}
               completedTasks={tasks.filter((t) => t.status === 'completed').length}
+              syncStatus={syncStatus}
+              onRefreshSync={() => {
+                void loadWorkspaceData(true);
+                showToast('Synced with backend');
+              }}
               onOpenAiImport={() => {
                 setCreateInitialMode('ai_plan');
                 setCreateVisible(true);
@@ -275,10 +472,15 @@ export default function App() {
                 setConfirmState({
                   visible: true,
                   title: 'Sign Out',
-                  message: 'Return to the TaskFlow Mobile sign-in screen?',
+                  message: 'Sign out of your TaskFlow workspace?',
                   confirmLabel: 'Sign Out',
-                  onConfirm: () => {
+                  onConfirm: async () => {
                     setConfirmState((s) => ({ ...s, visible: false }));
+                    await clearSession();
+                    syncFingerprintRef.current = '';
+                    setTasks([]);
+                    setProjects([]);
+                    setFolders([]);
                     setUser(null);
                   },
                 });
@@ -342,7 +544,7 @@ export default function App() {
         <CreateTaskModal
           visible={createVisible}
           initialMode={createInitialMode}
-          projects={MOCK_PROJECTS}
+          projects={projects}
           onClose={() => setCreateVisible(false)}
           onCreateSingle={handleCreateSingle}
           onImportAiPlan={handleImportAiPlan}
@@ -352,14 +554,8 @@ export default function App() {
         <TaskDetailModal
           task={selectedTask}
           onClose={() => setSelectedTaskId(null)}
-          onUpdateStatus={(taskId, status) => {
-            setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status } : t)));
-            showToast('Status updated');
-          }}
-          onUpdatePriority={(taskId, priority) => {
-            setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, priority } : t)));
-            showToast('Priority updated');
-          }}
+          onUpdateStatus={handleUpdateStatus}
+          onUpdatePriority={handleUpdatePriority}
           onToggleSubtask={handleToggleSubtask}
           onAddSubtask={handleAddSubtask}
           onDeleteSubtask={handleDeleteSubtask}
@@ -369,11 +565,24 @@ export default function App() {
               title: 'Delete Task',
               message: `Are you sure you want to delete "${task.title}"?`,
               confirmLabel: 'Delete Task',
-              onConfirm: () => {
+              onConfirm: async () => {
                 setConfirmState((s) => ({ ...s, visible: false }));
                 setSelectedTaskId(null);
-                setTasks((prev) => prev.filter((t) => t.id !== task.id));
-                showToast('Task deleted');
+                const prev = tasksRef.current;
+                setTasks((p) => p.filter((t) => t.id !== task.id));
+                try {
+                  const res = await deleteTask(task.id);
+                  if (!res.success) {
+                    setTasks(prev);
+                    showToast(res.message || 'Failed to delete task');
+                  } else {
+                    if (res.sync_fingerprint) syncFingerprintRef.current = res.sync_fingerprint;
+                    showToast('Task deleted');
+                  }
+                } catch {
+                  setTasks(prev);
+                  showToast('Network error deleting task');
+                }
               },
             });
           }}
@@ -393,6 +602,18 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+  bootScreen: {
+    flex: 1,
+    backgroundColor: COLORS.bg,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+  },
+  bootText: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
+  },
   safe: { flex: 1, backgroundColor: COLORS.surface },
   topBar: {
     flexDirection: 'row',

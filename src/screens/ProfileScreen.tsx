@@ -1,6 +1,7 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { getApiBaseUrl } from '../api';
 import { COLORS } from '../theme';
 import { User } from '../types';
 
@@ -8,6 +9,8 @@ interface ProfileScreenProps {
   user: User;
   totalTasks: number;
   completedTasks: number;
+  syncStatus: 'synced' | 'syncing' | 'error';
+  onRefreshSync: () => void;
   onOpenAiImport: () => void;
   onRequestLogout: () => void;
 }
@@ -16,6 +19,8 @@ export default function ProfileScreen({
   user,
   totalTasks,
   completedTasks,
+  syncStatus,
+  onRefreshSync,
   onOpenAiImport,
   onRequestLogout,
 }: ProfileScreenProps) {
@@ -66,18 +71,22 @@ export default function ProfileScreen({
 
         <View style={styles.divider} />
 
-        <View style={styles.menuRow}>
+        <TouchableOpacity style={styles.menuRow} onPress={onRefreshSync} activeOpacity={0.75}>
           <View style={[styles.menuIcon, { backgroundColor: COLORS.emeraldSoft }]}>
             <Ionicons name="sync" size={18} color={COLORS.emerald} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.menuTitle}>Cross-Device Sync</Text>
-            <Text style={styles.menuSub}>UI Prototype Mode (Mock Data)</Text>
+            <Text style={styles.menuSub} numberOfLines={1}>
+              {getApiBaseUrl()}
+            </Text>
           </View>
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>Ready</Text>
+            <Text style={styles.badgeText}>
+              {syncStatus === 'syncing' ? 'Syncing' : syncStatus === 'error' ? 'Retry' : 'Live'}
+            </Text>
           </View>
-        </View>
+        </TouchableOpacity>
       </View>
 
       <TouchableOpacity style={styles.logoutBtn} onPress={onRequestLogout} activeOpacity={0.85}>
