@@ -691,6 +691,7 @@ function AppContent() {
                 setActiveQueue(filter);
                 setActiveTab('tasks');
               }}
+              onTogglePomodoro={() => setPomodoroVisible((v) => !v)}
             />
           )}
 
@@ -800,17 +801,19 @@ function AppContent() {
           )}
         </View>
 
-        {/* Floating Quick Create Button */}
-        <TouchableOpacity
-          style={[styles.fab, isWide && styles.fabWide]}
-          activeOpacity={0.85}
-          onPress={() => {
-            setCreateInitialMode('single');
-            setCreateVisible(true);
-          }}
-        >
-          <Ionicons name="add" size={26} color="#09090b" />
-        </TouchableOpacity>
+        {/* Floating Quick Create Button (hidden on Today & Profile where New Task is already prominent) */}
+        {activeTab !== 'home' && activeTab !== 'profile' && (
+          <TouchableOpacity
+            style={[styles.fab, isWide && styles.fabWide]}
+            activeOpacity={0.85}
+            onPress={() => {
+              setCreateInitialMode('single');
+              setCreateVisible(true);
+            }}
+          >
+            <Ionicons name="add" size={26} color="#09090b" />
+          </TouchableOpacity>
+        )}
 
         {/* Toast Banner */}
         {toastMsg && (
@@ -839,9 +842,10 @@ function AppContent() {
                     style={styles.tabItem}
                     onPress={() => setActiveTab(tab.key)}
                   >
+                    {active && <View style={styles.tabActiveBar} />}
                     <Ionicons
                       name={active ? tab.activeIcon : tab.icon}
-                      size={21}
+                      size={22}
                       color={active ? colors.cyan : colors.textMuted}
                     />
                     <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>
@@ -1124,13 +1128,24 @@ const createStyles = (COLORS: ThemePalette) => StyleSheet.create({
   },
   tabBar: {
     flexDirection: 'row',
-    paddingVertical: 8,
+    paddingTop: 6,
+    paddingBottom: 8,
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 3,
+    position: 'relative',
+    paddingTop: 4,
+  },
+  tabActiveBar: {
+    position: 'absolute',
+    top: -6,
+    width: 28,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: COLORS.cyan,
   },
   tabLabel: { fontSize: 10, fontWeight: '600', color: COLORS.textMuted },
   tabLabelActive: { color: COLORS.cyan },

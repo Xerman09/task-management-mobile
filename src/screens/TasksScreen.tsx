@@ -81,13 +81,26 @@ export default function TasksScreen({
     ? projects.find((p) => p.id === selectedProjectId) || null
     : null;
 
-  const queues: { id: QueueFilter; label: string }[] = [
-    { id: 'all', label: 'All' },
-    { id: 'today', label: 'Today' },
-    { id: 'missed', label: 'Missed' },
-    { id: 'recurring', label: 'Recurring' },
-    { id: 'completed', label: 'Done' },
-  ];
+  const queues: { id: QueueFilter; label: string; count: number }[] = useMemo(() => {
+    let todayCount = 0;
+    let missedCount = 0;
+    let recurringCount = 0;
+    let doneCount = 0;
+    for (const t of tasks) {
+      const done = t.status === 'completed';
+      if (done) doneCount += 1;
+      if (!done && t.due_date === todayStr) todayCount += 1;
+      if (!done && t.due_date && t.due_date < todayStr) missedCount += 1;
+      if (!done && t.recurrence && t.recurrence !== 'none') recurringCount += 1;
+    }
+    return [
+      { id: 'all', label: 'All', count: tasks.length },
+      { id: 'today', label: 'Today', count: todayCount },
+      { id: 'missed', label: 'Missed', count: missedCount },
+      { id: 'recurring', label: 'Recurring', count: recurringCount },
+      { id: 'completed', label: 'Done', count: doneCount },
+    ];
+  }, [tasks, todayStr]);
 
   const renderStatusIcon = (status: TaskStatus) => {
     if (status === 'completed') {
@@ -201,7 +214,7 @@ export default function TasksScreen({
               onPress={() => onChangeQueue(q.id)}
             >
               <Text style={[styles.queueChipText, isActive && styles.queueChipTextActive]}>
-                {q.label}
+                {q.label} ({q.count})
               </Text>
             </TouchableOpacity>
           );

@@ -14,6 +14,7 @@ interface HomeScreenProps {
   onAdvanceStatus: (task: Task) => void;
   onToggleSubtask: (subtask: Subtask) => void;
   onGoToTasks: (filter: 'all' | 'today' | 'missed') => void;
+  onTogglePomodoro?: () => void;
 }
 
 export default function HomeScreen({
@@ -24,6 +25,7 @@ export default function HomeScreen({
   onAdvanceStatus,
   onToggleSubtask,
   onGoToTasks,
+  onTogglePomodoro,
 }: HomeScreenProps) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -147,9 +149,18 @@ export default function HomeScreen({
       {/* Today's & Overdue Focus */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Today&apos;s Focus &amp; Urgent</Text>
-        <TouchableOpacity onPress={() => onGoToTasks('all')}>
-          <Text style={styles.sectionLink}>View All</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          {onTogglePomodoro && (
+            <TouchableOpacity style={styles.sectionPillBtn} onPress={onTogglePomodoro}>
+              <Ionicons name="timer-outline" size={13} color={colors.cyan} />
+              <Text style={styles.sectionPillText}>Focus</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity style={styles.sectionPillBtn} onPress={() => onGoToTasks('all')}>
+            <Text style={styles.sectionPillText}>View All</Text>
+            <Ionicons name="arrow-forward" size={12} color={colors.cyan} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {focusTasks.length === 0 ? (
@@ -216,6 +227,17 @@ export default function HomeScreen({
                       <Text style={styles.stepsLabel}>
                         Steps ({doneSteps}/{task.subtasks.length})
                       </Text>
+                    </View>
+                    <View style={styles.miniProgressTrack}>
+                      <View
+                        style={[
+                          styles.miniProgressFill,
+                          {
+                            width: `${Math.round((doneSteps / task.subtasks.length) * 100)}%`,
+                            backgroundColor: doneSteps === task.subtasks.length ? colors.emerald : colors.cyan,
+                          },
+                        ]}
+                      />
                     </View>
                     {task.subtasks.slice(0, 3).map((sub) => (
                       <TouchableOpacity
@@ -332,6 +354,26 @@ const createStyles = (COLORS: ThemePalette) => StyleSheet.create({
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
   sectionTitle: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
   sectionLink: { fontSize: 12, fontWeight: '600', color: COLORS.cyan },
+  sectionPillBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  sectionPillText: { fontSize: 11, fontWeight: '700', color: COLORS.cyan },
+  miniProgressTrack: {
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: COLORS.borderSubtle,
+    overflow: 'hidden',
+    marginBottom: 4,
+  },
+  miniProgressFill: { height: '100%', borderRadius: 2 },
   emptyCard: {
     backgroundColor: COLORS.surface,
     borderRadius: 14,
