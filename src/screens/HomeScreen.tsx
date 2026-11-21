@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { PRIORITY_COLORS, ThemePalette } from '../theme';
@@ -30,6 +30,31 @@ export default function HomeScreen({
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const todayStr = getTodayYMD();
+
+  // Compact inline Pomodoro clock state
+  const [pomoMode, setPomoMode] = useState<'focus' | 'break'>('focus');
+  const [pomoSeconds, setPomoSeconds] = useState(25 * 60);
+  const [pomoRunning, setPomoRunning] = useState(false);
+
+  useEffect(() => {
+    if (!pomoRunning) return;
+    const t = setInterval(() => {
+      setPomoSeconds((prev) => {
+        if (prev <= 1) {
+          setPomoRunning(false);
+          const next = pomoMode === 'focus' ? 'break' : 'focus';
+          setPomoMode(next);
+          return next === 'break' ? 5 * 60 : 25 * 60;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(t);
+  }, [pomoRunning, pomoMode]);
+
+  const pomoMins = Math.floor(pomoSeconds / 60);
+  const pomoSecs = pomoSeconds % 60;
+  const pomoFormatted = `${pomoMins < 10 ? '0' : ''}${pomoMins}:${pomoSecs < 10 ? '0' : ''}${pomoSecs}`;
   const total = tasks.length;
   const completed = tasks.filter((t) => t.status === 'completed').length;
   const completionPct = total > 0 ? Math.round((completed / total) * 100) : 0;
@@ -170,6 +195,67 @@ export default function HomeScreen({
           <Text style={[styles.statStripVal, { color: colors.cyan }]}>{completionPct}%</Text>
           <Text style={styles.statStripLbl}>Done</Text>
         </TouchableOpacity>
+      </View>
+
+      {/* Compact Inline Pomodoro Clock */}
+      <View style={styles.pomoCard}>
+        <View style={styles.pomoLeft}>
+          <View
+            style={[
+              styles.pomoIconBox,
+              { backgroundColor: pomoMode === 'focus' ? colors.cyanSoft : colors.emeraldSoft },
+            ]}
+          >
+            <Ionicons
+              name="timer-outline"
+              size={16}
+              color={pomoMode === 'focus' ? colors.cyan : colors.emerald}
+            />
+          </View>
+          <Text style={styles.pomoClock}>{pomoFormatted}</Text>
+          <TouchableOpacity
+            style={[styles.pomoModeBtn, pomoMode === 'focus' && styles.pomoModeBtnActive]}
+            onPress={() => {
+              setPomoRunning(false);
+              setPomoMode('focus');
+              setPomoSeconds(25 * 60);
+            }}
+          >
+            <Text style={[styles.pomoModeText, pomoMode === 'focus' && styles.pomoModeTextActive]}>
+              Focus
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.pomoModeBtn, pomoMode === 'break' && styles.pomoModeBtnActive]}
+            onPress={() => {
+              setPomoRunning(false);
+              setPomoMode('break');
+              setPomoSeconds(5 * 60);
+            }}
+          >
+            <Text style={[styles.pomoModeText, pomoMode === 'break' && styles.pomoModeTextActive]}>
+              Break
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.pomoRight}>
+          <TouchableOpacity
+            style={styles.pomoPlayBtn}
+            onPress={() => setPomoRunning((r) => !r)}
+          >
+            <Ionicons name={pomoRunning ? 'pause' : 'play'} size={14} color="#09090b" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.pomoResetBtn}
+            onPress={() => {
+              setPomoRunning(false);
+              setPomoSeconds(pomoMode === 'focus' ? 25 * 60 : 5 * 60);
+            }}
+          >
+            <Ionicons name="refresh" size={14} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Today's & Overdue Focus */}
@@ -350,6 +436,61 @@ const createStyles = (COLORS: ThemePalette) => StyleSheet.create({
   statStripVal: { fontSize: 17, fontWeight: '800', color: COLORS.textPrimary },
   statStripLbl: { fontSize: 10, fontWeight: '600', color: COLORS.textMuted },
   statDivider: { width: 1, height: 24, backgroundColor: COLORS.borderSubtle },
+  pomoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.surface,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  pomoLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  pomoIconBox: {
+    width: 30,
+    height: 30,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pomoClock: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    fontVariant: ['tabular-nums'],
+  },
+  pomoModeBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: COLORS.card,
+    borderWidth: 1,
+    borderColor: COLORS.borderSubtle,
+  },
+  pomoModeBtnActive: { backgroundColor: COLORS.cyanSoft, borderColor: COLORS.cyanBorder },
+  pomoModeText: { fontSize: 10, fontWeight: '700', color: COLORS.textMuted },
+  pomoModeTextActive: { color: COLORS.cyan },
+  pomoRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  pomoPlayBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 9,
+    backgroundColor: COLORS.cyan,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pomoResetBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 9,
+    backgroundColor: COLORS.card,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   heroChipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   heroChip: {
     flexDirection: 'row',
