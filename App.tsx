@@ -239,6 +239,29 @@ function AppContent() {
     }
   };
 
+  const handleToggleComplete = async (task: Task) => {
+    const latest = tasksRef.current.find((t) => t.id === task.id) || task;
+    const prevStatus = latest.status;
+    const nextStatus: TaskStatus = prevStatus === 'completed' ? 'todo' : 'completed';
+
+    setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status: nextStatus } : t)));
+    void triggerHaptic(nextStatus === 'completed' ? 'success' : 'light');
+    showToast(nextStatus === 'completed' ? 'Task completed' : 'Task reopened');
+
+    try {
+      const res = await updateTask({ id: task.id, status: nextStatus });
+      if (!res.success) {
+        setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status: prevStatus } : t)));
+        showToast(res.message || 'Failed to update status');
+      } else if (res.sync_fingerprint) {
+        syncFingerprintRef.current = res.sync_fingerprint;
+      }
+    } catch {
+      setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status: prevStatus } : t)));
+      showToast('Network error updating status');
+    }
+  };
+
   const handleUpdateStatus = async (taskId: number, status: TaskStatus) => {
     const prevStatus = tasksRef.current.find((t) => t.id === taskId)?.status;
     setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status } : t)));
@@ -588,41 +611,49 @@ function AppContent() {
 
               <View style={styles.topRightRow}>
                 <TouchableOpacity
-                  style={styles.liveSyncPill}
-                  onPress={() => setNotificationsOpen(true)}
-                  accessibilityLabel="Open reminders and alerts"
-                >
-                  <Ionicons name="notifications-outline" size={14} color={colors.textSecondary} />
-                  {reminderCount > 0 && (
-                    <Text style={[styles.liveSyncText, { color: colors.amber }]}>
-                      {reminderCount}
-                    </Text>
-                  )}
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.liveSyncPill}
+                  style={styles.topIconBtn}
                   onPress={() => setCommandOpen(true)}
                   accessibilityLabel="Quick search and command palette"
                 >
-                  <Ionicons name="search" size={14} color={colors.textSecondary} />
+                  <Ionicons name="search" size={17} color={colors.textSecondary} />
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={styles.liveSyncPill}
-                  onPress={() => setPomodoroVisible((v) => !v)}
-                  accessibilityLabel="Toggle Pomodoro Focus Timer"
+                  style={styles.topIconBtn}
+                  onPress={() => setNotificationsOpen(true)}
+                  accessibilityLabel="Open reminders and alerts"
                 >
-                  <Ionicons name="timer-outline" size={14} color={pomodoroVisible ? colors.cyan : colors.textSecondary} />
+                  <Ionicons name="notifications-outline" size={17} color={colors.textSecondary} />
+                  {reminderCount > 0 && (
+                    <View style={styles.topBadge}>
+                      <Text style={styles.topBadgeText}>{reminderCount > 9 ? '9+' : reminderCount}</Text>
+                    </View>
+                  )}
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.liveSyncPill}
-                  onPress={() => {
-                    void loadWorkspaceData(true);
-                    showToast('Synced with backend');
-                  }}
-                >
-                  <View style={[styles.liveSyncDot, { backgroundColor: syncColor }]} />
-                  <Text style={[styles.liveSyncText, { color: syncColor }]}>{syncLabel}</Text>
-                </TouchableOpacity>
+                {isWide && (
+                  <TouchableOpacity
+                    style={styles.topIconBtn}
+                    onPress={() => setPomodoroVisible((v) => !v)}
+                    accessibilityLabel="Toggle Pomodoro Focus Timer"
+                  >
+                    <Ionicons
+                      name="timer-outline"
+                      size={17}
+                      color={pomodoroVisible ? colors.cyan : colors.textSecondary}
+                    />
+                  </TouchableOpacity>
+                )}
+                {isWide && (
+                  <TouchableOpacity
+                    style={styles.liveSyncPill}
+                    onPress={() => {
+                      void loadWorkspaceData(true);
+                      showToast('Synced with backend');
+                    }}
+                  >
+                    <View style={[styles.liveSyncDot, { backgroundColor: syncColor }]} />
+                    <Text style={[styles.liveSyncText, { color: syncColor }]}>{syncLabel}</Text>
+                  </TouchableOpacity>
+                )}
                 <TouchableOpacity
                   style={styles.aiShortcutBtn}
                   onPress={() => {
@@ -654,7 +685,7 @@ function AppContent() {
                 setCreateVisible(true);
               }}
               onSelectTask={(task) => setSelectedTaskId(task.id)}
-              onAdvanceStatus={handleAdvanceStatus}
+              onAdvanceStatus={handleToggleComplete}
               onToggleSubtask={handleToggleSubtask}
               onGoToTasks={(filter) => {
                 setActiveQueue(filter);
@@ -673,6 +704,16 @@ function AppContent() {
               onClearProjectFilter={() => setSelectedProjectId('all')}
               onSelectTask={(task) => setSelectedTaskId(task.id)}
               onAdvanceStatus={handleAdvanceStatus}
+              onToggleComplete={handleToggleComplete}
+              onQuickCreate={(title, projectId, dueDate) =>
+                handleCreateSingle({
+                  title,
+                  priority: 'medium',
+                  projectId,
+                  dueDate,
+                  steps: [],
+                })
+              }
               onToggleSubtask={handleToggleSubtask}
               onAddSubtask={handleAddSubtask}
             />
@@ -1008,6 +1049,29 @@ const createStyles = (COLORS: ThemePalette) => StyleSheet.create({
   },
   aiShortcutText: { fontSize: 11, fontWeight: '700', color: '#ddd6fe' },
   topRightRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  topIconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: COLORS.card,
+    borderWidth: 1,
+    borderColor: COLORS.borderSubtle,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  topBadge: {
+    position: 'absolute',
+    top: -3,
+    right: -3,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: COLORS.amber,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  topBadgeText: { fontSize: 9, fontWeight: '800', color: '#09090b' },
   liveSyncPill: {
     flexDirection: 'row',
     alignItems: 'center',

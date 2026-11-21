@@ -24,6 +24,8 @@ interface TasksScreenProps {
   onClearProjectFilter: () => void;
   onSelectTask: (task: Task) => void;
   onAdvanceStatus: (task: Task) => void;
+  onToggleComplete: (task: Task) => void;
+  onQuickCreate: (title: string, projectId: number | null, dueDate?: string) => void;
   onToggleSubtask: (subtask: Subtask) => void;
   onAddSubtask: (taskId: number, title: string) => void;
 }
@@ -37,6 +39,8 @@ export default function TasksScreen({
   onClearProjectFilter,
   onSelectTask,
   onAdvanceStatus,
+  onToggleComplete,
+  onQuickCreate,
   onToggleSubtask,
   onAddSubtask,
 }: TasksScreenProps) {
@@ -44,6 +48,7 @@ export default function TasksScreen({
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [viewMode, setViewMode] = useState<'list' | 'board'>('list');
   const [searchQuery, setSearchQuery] = useState('');
+  const [quickTitle, setQuickTitle] = useState('');
   const [expandedIds, setExpandedIds] = useState<Record<number, boolean>>({});
   const [inlineSteps, setInlineSteps] = useState<Record<number, string>>({});
 
@@ -141,6 +146,45 @@ export default function TasksScreen({
         </View>
       </View>
 
+      {/* Quick Add Bar */}
+      <View style={styles.quickAddRow}>
+        <TextInput
+          style={styles.quickAddInput}
+          value={quickTitle}
+          onChangeText={setQuickTitle}
+          placeholder="Quick add a task..."
+          placeholderTextColor={colors.textMuted}
+          onSubmitEditing={() => {
+            const val = quickTitle.trim();
+            if (val) {
+              onQuickCreate(
+                val,
+                selectedProjectId === 'all' ? null : selectedProjectId,
+                activeQueue === 'today' ? todayStr : undefined
+              );
+              setQuickTitle('');
+            }
+          }}
+        />
+        <TouchableOpacity
+          style={styles.quickAddBtn}
+          onPress={() => {
+            const val = quickTitle.trim();
+            if (val) {
+              onQuickCreate(
+                val,
+                selectedProjectId === 'all' ? null : selectedProjectId,
+                activeQueue === 'today' ? todayStr : undefined
+              );
+              setQuickTitle('');
+            }
+          }}
+        >
+          <Ionicons name="add" size={18} color="#09090b" />
+          <Text style={styles.quickAddBtnText}>Add</Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Queue Tabs */}
       <ScrollView
         horizontal
@@ -208,8 +252,8 @@ export default function TasksScreen({
                     onPress={() => onSelectTask(task)}
                   >
                     <TouchableOpacity
-                      onPress={() => onAdvanceStatus(task)}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      onPress={() => onToggleComplete(task)}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     >
                       {renderStatusIcon(task.status)}
                     </TouchableOpacity>
@@ -220,6 +264,14 @@ export default function TasksScreen({
                       </Text>
 
                       <View style={styles.metaRow}>
+                        <TouchableOpacity
+                          style={styles.statusChip}
+                          onPress={() => onAdvanceStatus(task)}
+                        >
+                          <Text style={styles.statusChipText}>
+                            {task.status.replace('_', ' ')}
+                          </Text>
+                        </TouchableOpacity>
                         {task.project_name && (
                           <View style={styles.metaTag}>
                             <View
@@ -397,6 +449,43 @@ const createStyles = (COLORS: ThemePalette) => StyleSheet.create({
     borderColor: COLORS.border,
   },
   searchInput: { flex: 1, fontSize: 13, color: COLORS.textPrimary },
+  quickAddRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+  },
+  quickAddInput: {
+    flex: 1,
+    height: 42,
+    backgroundColor: COLORS.surface,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: 12,
+    fontSize: 13,
+    color: COLORS.textPrimary,
+  },
+  quickAddBtn: {
+    height: 42,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    backgroundColor: COLORS.cyan,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  quickAddBtnText: { fontSize: 13, fontWeight: '800', color: '#09090b' },
+  statusChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 999,
+    backgroundColor: COLORS.cardElevated,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  statusChipText: { fontSize: 10, fontWeight: '700', color: COLORS.textSecondary, textTransform: 'capitalize' },
   viewToggle: {
     flexDirection: 'row',
     backgroundColor: COLORS.surface,
