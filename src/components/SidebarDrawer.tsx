@@ -19,7 +19,7 @@ import { Folder, Project, Task, User } from '../types';
 import { QueueFilter } from '../screens/TasksScreen';
 import { getTodayYMD } from '../utils/date';
 
-type TabKey = 'home' | 'tasks' | 'calendar' | 'matrix' | 'projects' | 'profile';
+type TabKey = 'home' | 'tasks' | 'calendar' | 'matrix' | 'focus' | 'projects' | 'profile';
 
 interface SidebarDrawerProps {
   visible: boolean;
@@ -286,6 +286,12 @@ export default function SidebarDrawer({
                 label="Eisenhower Matrix"
                 active={activeTab === 'matrix'}
                 onPress={() => navigateTab('matrix')}
+              />
+              <NavItem
+                icon="timer-outline"
+                label="Pomodoro Focus"
+                active={activeTab === 'focus'}
+                onPress={() => navigateTab('focus')}
               />
               <NavItem
                 icon="folder-outline"

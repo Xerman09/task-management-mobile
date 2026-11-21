@@ -28,6 +28,7 @@ import HomeScreen from './src/screens/HomeScreen';
 import TasksScreen, { QueueFilter } from './src/screens/TasksScreen';
 import CalendarScreen from './src/screens/CalendarScreen';
 import MatrixScreen from './src/screens/MatrixScreen';
+import FocusScreen from './src/screens/FocusScreen';
 import ProjectsScreen from './src/screens/ProjectsScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import CreateTaskModal from './src/components/CreateTaskModal';
@@ -46,7 +47,7 @@ import { getTodayYMD } from './src/utils/date';
 
 const WORKSPACE_CACHE_KEY = '@taskflow_workspace_cache';
 
-type TabKey = 'home' | 'tasks' | 'calendar' | 'matrix' | 'projects' | 'profile';
+type TabKey = 'home' | 'tasks' | 'calendar' | 'matrix' | 'focus' | 'projects' | 'profile';
 
 export default function App() {
   return (
@@ -651,9 +652,11 @@ function AppContent() {
                           ? 'Calendar'
                           : activeTab === 'matrix'
                             ? 'Eisenhower Matrix'
-                            : activeTab === 'projects'
-                              ? 'Folders & Projects'
-                              : 'Profile & Sync'
+                            : activeTab === 'focus'
+                              ? 'Pomodoro Focus'
+                              : activeTab === 'projects'
+                                ? 'Folders & Projects'
+                                : 'Profile & Sync'
                     : 'TaskFlow'}
                 </Text>
               </View>
@@ -740,7 +743,7 @@ function AppContent() {
                 setActiveQueue(filter);
                 setActiveTab('tasks');
               }}
-              onTogglePomodoro={() => setPomodoroVisible((v) => !v)}
+              onTogglePomodoro={() => setActiveTab('focus')}
             />
           )}
 
@@ -782,6 +785,15 @@ function AppContent() {
               tasks={tasks}
               onSelectTask={(task) => setSelectedTaskId(task.id)}
               onAdvanceStatus={handleAdvanceStatus}
+            />
+          )}
+
+          {activeTab === 'focus' && (
+            <FocusScreen
+              tasks={tasks}
+              onToggleComplete={handleToggleComplete}
+              onSelectTask={(task) => setSelectedTaskId(task.id)}
+              onNotify={showToast}
             />
           )}
 
