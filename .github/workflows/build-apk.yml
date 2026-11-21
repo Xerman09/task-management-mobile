@@ -49,11 +49,26 @@ jobs:
       - name: Expo Prebuild (Android)
         run: npx expo prebuild --platform android --non-interactive
 
-      - name: Enable cleartext HTTP for Tailscale LAN endpoint
+      - name: Enable cleartext HTTP and APK compression/shrinking
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
           if ! grep -q 'usesCleartextTraffic' "$MANIFEST"; then
             sed -i 's/<application /<application android:usesCleartextTraffic="true" /' "$MANIFEST"
+          fi
+          PROPS="android/gradle.properties"
+          sed -i 's/^reactNativeArchitectures=.*/reactNativeArchitectures=arm64-v8a/' "$PROPS"
+          if ! grep -q 'android.enableMinifyInReleaseBuilds' "$PROPS"; then
+            echo "android.enableMinifyInReleaseBuilds=true" >> "$PROPS"
+          else
+            sed -i 's/^android.enableMinifyInReleaseBuilds=.*/android.enableMinifyInReleaseBuilds=true/' "$PROPS"
+          fi
+          if ! grep -q 'android.enableShrinkResourcesInReleaseBuilds' "$PROPS"; then
+            echo "android.enableShrinkResourcesInReleaseBuilds=true" >> "$PROPS"
+          else
+            sed -i 's/^android.enableShrinkResourcesInReleaseBuilds=.*/android.enableShrinkResourcesInReleaseBuilds=true/' "$PROPS"
+          fi
+          if ! grep -q 'android.enablePngCrunchInReleaseBuilds' "$PROPS"; then
+            echo "android.enablePngCrunchInReleaseBuilds=true" >> "$PROPS"
           fi
 
       - name: Build Android Release APK
