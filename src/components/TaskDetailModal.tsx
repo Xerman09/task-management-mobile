@@ -535,7 +535,7 @@ export default function TaskDetailModal({
                   {comments.map((c) => (
                     <View key={c.id} style={styles.commentCard}>
                       <View style={styles.commentHeader}>
-                        <Text style={styles.commentAuthor}>{c.user_name || 'Member'}</Text>
+                        <Text style={styles.commentAuthor}>{c.author_name || c.user_name || 'Member'}</Text>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                           <Text style={styles.commentDate}>{formatDisplayDate(c.created_at)}</Text>
                           {(!currentUserId || c.user_id === currentUserId) && (
