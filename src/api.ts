@@ -25,7 +25,7 @@ export function getDefaultApiBaseUrl(): string {
   if (typeof window !== 'undefined' && window.location?.hostname) {
     return `${window.location.protocol}//${window.location.hostname}/task_management/backend-php/api`;
   }
-  return 'http://127.0.0.1/task_management/backend-php/api';
+  return 'http://100.124.104.46/task_management/backend-php/api';
 }
 
 export function getApiBaseUrl(): string {
