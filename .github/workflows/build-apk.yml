@@ -56,6 +56,7 @@ jobs:
             sed -i 's/<application /<application android:usesCleartextTraffic="true" /' "$MANIFEST"
           fi
           PROPS="android/gradle.properties"
+          printf "\n" >> "$PROPS"
           sed -i 's/^reactNativeArchitectures=.*/reactNativeArchitectures=arm64-v8a/' "$PROPS"
           if ! grep -q 'android.enableMinifyInReleaseBuilds' "$PROPS"; then
             echo "android.enableMinifyInReleaseBuilds=true" >> "$PROPS"
