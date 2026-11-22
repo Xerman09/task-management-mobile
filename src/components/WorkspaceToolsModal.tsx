@@ -89,42 +89,55 @@ export default function WorkspaceToolsModal({
   }, [visible]);
 
   const handleSeedPresets = async () => {
-    const res = await seedAutomationPresets();
-    if (res.success) {
-      const list = await getAutomationRules();
-      if (list.success && list.rules) setRules(list.rules);
-      onShowToast('Preset rules added');
-    } else {
-      onShowToast(res.message || 'Failed to seed presets');
+    try {
+      const res = await seedAutomationPresets();
+      if (res.success) {
+        const list = await getAutomationRules();
+        if (list.success && list.rules) setRules(list.rules);
+        onShowToast('Preset rules added');
+      } else {
+        onShowToast(res.message || 'Failed to seed presets');
+      }
+    } catch {
+      onShowToast('Network error seeding presets');
     }
   };
 
   const handleAddRule = async () => {
     const name = ruleName.trim();
     if (!name) return;
-    const res = await createAutomationRule({
-      name,
-      trigger_type: 'status_changed',
-      trigger_value: 'completed',
-      action_type: 'notify',
-      action_value: 'Task completed',
-    });
-    if (res.success && res.rule) {
-      setRules((p) => [res.rule!, ...p]);
-      setRuleName('');
-      onShowToast('Automation rule created');
-    } else {
-      onShowToast(res.message || 'Failed to create rule');
+    try {
+      const res = await createAutomationRule({
+        name,
+        trigger_type: 'status_changed',
+        trigger_value: 'completed',
+        action_type: 'notify',
+        action_value: 'Task completed',
+      });
+      if (res.success && res.rule) {
+        setRules((p) => [res.rule!, ...p]);
+        setRuleName('');
+        onShowToast('Automation rule created');
+      } else {
+        onShowToast(res.message || 'Failed to create rule');
+      }
+    } catch {
+      onShowToast('Network error creating rule');
     }
   };
 
   const handleToggleRule = async (rule: AutomationRule) => {
     const next = !rule.is_active;
     setRules((p) => p.map((r) => (r.id === rule.id ? { ...r, is_active: next } : r)));
-    const res = await updateAutomationRule({ id: rule.id, is_active: next });
-    if (!res.success) {
+    try {
+      const res = await updateAutomationRule({ id: rule.id, is_active: next });
+      if (!res.success) {
+        setRules((p) => p.map((r) => (r.id === rule.id ? { ...r, is_active: !next } : r)));
+        onShowToast(res.message || 'Failed to update rule');
+      }
+    } catch {
       setRules((p) => p.map((r) => (r.id === rule.id ? { ...r, is_active: !next } : r)));
-      onShowToast(res.message || 'Failed to update rule');
+      onShowToast('Network error updating rule');
     }
   };
 
@@ -134,10 +147,16 @@ export default function WorkspaceToolsModal({
       message: `Delete automation "${rule.name}"?`,
       confirmLabel: 'Delete',
       onConfirm: async () => {
-        const res = await deleteAutomationRule(rule.id);
-        if (res.success) {
-          setRules((p) => p.filter((r) => r.id !== rule.id));
-          onShowToast('Rule deleted');
+        try {
+          const res = await deleteAutomationRule(rule.id);
+          if (res.success) {
+            setRules((p) => p.filter((r) => r.id !== rule.id));
+            onShowToast('Rule deleted');
+          } else {
+            onShowToast(res.message || 'Failed to delete rule');
+          }
+        } catch {
+          onShowToast('Network error deleting rule');
         }
       },
     });
@@ -145,25 +164,48 @@ export default function WorkspaceToolsModal({
 
   const handleAddWebhook = async () => {
     if (!whName.trim() || !whUrl.trim()) return;
-    const res = await createWebhook({
-      name: whName.trim(),
-      provider: whProvider,
-      webhook_url: whUrl.trim(),
-      events: ['task_created_urgent', 'task_completed', 'status_changed'],
-    });
-    if (res.success && res.webhook) {
-      setWebhooks((p) => [res.webhook!, ...p]);
-      setWhName('');
-      setWhUrl('');
-      onShowToast('Integration added');
-    } else {
-      onShowToast(res.message || 'Failed to add integration');
+    try {
+      const res = await createWebhook({
+        name: whName.trim(),
+        provider: whProvider,
+        webhook_url: whUrl.trim(),
+        events: ['task_created_urgent', 'task_completed', 'status_changed'],
+      });
+      if (res.success && res.webhook) {
+        setWebhooks((p) => [res.webhook!, ...p]);
+        setWhName('');
+        setWhUrl('');
+        onShowToast('Integration added');
+      } else {
+        onShowToast(res.message || 'Failed to add integration');
+      }
+    } catch {
+      onShowToast('Network error adding integration');
     }
   };
 
   const handleTestWebhook = async (id: number) => {
-    const res = await testWebhook(id);
-    onShowToast(res.success ? 'Test payload sent' : res.message || 'Webhook test failed');
+    try {
+      const res = await testWebhook(id);
+      onShowToast(res.success ? 'Test payload sent' : res.message || 'Webhook test failed');
+    } catch {
+      onShowToast('Network error testing webhook');
+    }
+  };
+
+  const handleToggleWebhook = async (wh: WebhookConfig) => {
+    const next = !wh.is_active;
+    setWebhooks((p) => p.map((x) => (x.id === wh.id ? { ...x, is_active: next } : x)));
+    try {
+      const res = await updateWebhook({ id: wh.id, is_active: next });
+      if (!res.success) {
+        setWebhooks((p) => p.map((x) => (x.id === wh.id ? { ...x, is_active: !next } : x)));
+        onShowToast(res.message || 'Failed to update integration');
+      }
+    } catch {
+      setWebhooks((p) => p.map((x) => (x.id === wh.id ? { ...x, is_active: !next } : x)));
+      onShowToast('Network error updating integration');
+    }
   };
 
   const handleDeleteWebhook = (wh: WebhookConfig) => {
@@ -172,10 +214,16 @@ export default function WorkspaceToolsModal({
       message: `Remove webhook "${wh.name}"?`,
       confirmLabel: 'Remove',
       onConfirm: async () => {
-        const res = await deleteWebhook(wh.id);
-        if (res.success) {
-          setWebhooks((p) => p.filter((w) => w.id !== wh.id));
-          onShowToast('Integration removed');
+        try {
+          const res = await deleteWebhook(wh.id);
+          if (res.success) {
+            setWebhooks((p) => p.filter((w) => w.id !== wh.id));
+            onShowToast('Integration removed');
+          } else {
+            onShowToast(res.message || 'Failed to remove integration');
+          }
+        } catch {
+          onShowToast('Network error removing integration');
         }
       },
     });
@@ -355,13 +403,7 @@ export default function WorkspaceToolsModal({
                     </TouchableOpacity>
                     <Switch
                       value={w.is_active}
-                      onValueChange={async () => {
-                        const next = !w.is_active;
-                        setWebhooks((p) =>
-                          p.map((x) => (x.id === w.id ? { ...x, is_active: next } : x))
-                        );
-                        await updateWebhook({ id: w.id, is_active: next });
-                      }}
+                      onValueChange={() => void handleToggleWebhook(w)}
                     />
                     <TouchableOpacity onPress={() => handleDeleteWebhook(w)}>
                       <Ionicons name="trash-outline" size={16} color={colors.rose} />
