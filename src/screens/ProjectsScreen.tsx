@@ -195,21 +195,21 @@ export default function ProjectsScreen({
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-      <View style={styles.headerRow}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.title}>Folders &amp; Projects</Text>
-          <Text style={styles.subtitle}>Tap any project to view and manage its tasks</Text>
+      <View style={styles.headerBlock}>
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>Projects</Text>
+          <View style={styles.headerActions}>
+            <TouchableOpacity style={styles.secondaryBtn} onPress={openCreateFolder}>
+              <Ionicons name="folder-open-outline" size={14} color={colors.textPrimary} />
+              <Text style={styles.secondaryBtnText}>Folder</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.primaryBtn} onPress={openCreateProject}>
+              <Ionicons name="add" size={15} color={colors.bg} />
+              <Text style={styles.primaryBtnText}>Project</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-        <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.secondaryBtn} onPress={openCreateFolder}>
-            <Ionicons name="folder-open-outline" size={14} color={colors.textPrimary} />
-            <Text style={styles.secondaryBtnText}>+ Folder</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.primaryBtn} onPress={openCreateProject}>
-            <Ionicons name="add" size={15} color={colors.bg} />
-            <Text style={styles.primaryBtnText}>Project</Text>
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.subtitle}>Tap a project to filter and manage its tasks</Text>
       </View>
 
       {/* Folders */}
@@ -438,12 +438,12 @@ const createStyles = (COLORS: ThemePalette) =>
       width: '100%',
       alignSelf: 'center',
     },
+    headerBlock: { gap: 4 },
     headerRow: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
       gap: 10,
-      flexWrap: 'wrap',
     },
     headerActions: { flexDirection: 'row', gap: 8 },
     primaryBtn: {
