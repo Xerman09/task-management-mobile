@@ -67,11 +67,13 @@ export default function TasksScreen({
           return false;
         }
       }
-      if (activeQueue === 'today') return t.due_date === todayStr;
+      if (activeQueue === 'today') return t.due_date === todayStr && t.status !== 'completed';
       if (activeQueue === 'missed') {
         return Boolean(t.due_date) && (t.due_date as string) < todayStr && t.status !== 'completed';
       }
-      if (activeQueue === 'recurring') return Boolean(t.recurrence && t.recurrence !== 'none');
+      if (activeQueue === 'recurring') {
+        return Boolean(t.recurrence && t.recurrence !== 'none') && t.status !== 'completed';
+      }
       if (activeQueue === 'completed') return t.status === 'completed';
       return true;
     });
