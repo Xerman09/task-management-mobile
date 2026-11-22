@@ -258,7 +258,14 @@ export async function createSubtask(
 export async function updateSubtask(
   id: number,
   data: { is_completed?: boolean; title?: string }
-): Promise<{ success: boolean; message?: string; subtask?: Subtask; sync_fingerprint?: string }> {
+): Promise<{
+  success: boolean;
+  message?: string;
+  subtask?: Subtask;
+  task_status?: TaskStatus;
+  task_priority?: TaskPriority;
+  sync_fingerprint?: string;
+}> {
   return apiFetch('/subtasks/update.php', {
     method: 'POST',
     body: JSON.stringify({ id, ...data, auth_token: cachedToken }),

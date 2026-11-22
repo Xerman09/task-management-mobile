@@ -396,39 +396,45 @@ function AppContent() {
 
   const handleToggleSubtask = async (subtask: Subtask) => {
     const nextCompleted = !subtask.is_completed;
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === subtask.task_id
-          ? {
-              ...t,
-              subtasks: t.subtasks.map((s) =>
-                s.id === subtask.id ? { ...s, is_completed: nextCompleted } : s
-              ),
-            }
-          : t
-      )
-    );
+    const setLocalCompleted = (completed: boolean) => {
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === subtask.task_id
+            ? {
+                ...t,
+                subtasks: t.subtasks.map((s) =>
+                  s.id === subtask.id ? { ...s, is_completed: completed } : s
+                ),
+              }
+            : t
+        )
+      );
+    };
+    setLocalCompleted(nextCompleted);
 
     try {
       const res = await updateSubtask(subtask.id, { is_completed: nextCompleted });
       if (!res.success) {
-        setTasks((prev) =>
-          prev.map((t) =>
-            t.id === subtask.task_id
-              ? {
-                  ...t,
-                  subtasks: t.subtasks.map((s) =>
-                    s.id === subtask.id ? { ...s, is_completed: !nextCompleted } : s
-                  ),
-                }
-              : t
-          )
-        );
+        setLocalCompleted(!nextCompleted);
         showToast(res.message || 'Failed to update step');
-      } else if (res.sync_fingerprint) {
-        syncFingerprintRef.current = res.sync_fingerprint;
+      } else {
+        if (res.sync_fingerprint) syncFingerprintRef.current = res.sync_fingerprint;
+        if (res.task_status || res.task_priority) {
+          setTasks((prev) =>
+            prev.map((t) =>
+              t.id === subtask.task_id
+                ? {
+                    ...t,
+                    ...(res.task_status ? { status: res.task_status } : {}),
+                    ...(res.task_priority ? { priority: res.task_priority } : {}),
+                  }
+                : t
+            )
+          );
+        }
       }
     } catch {
+      setLocalCompleted(!nextCompleted);
       showToast('Network error updating step');
     }
   };
