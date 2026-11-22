@@ -87,15 +87,18 @@ export default function TaskDetailModal({
   const [postingComment, setPostingComment] = useState(false);
 
   useEffect(() => {
-    if (!task) return;
     setEditing(false);
+  }, [task?.id]);
+
+  useEffect(() => {
+    if (!task || editing) return;
     setEditTitle(task.title);
     setEditDescription(task.description || '');
     setEditDueDate(task.due_date || '');
     setEditRecurrence(task.recurrence || 'none');
     setEditProjectId(task.project_id ?? null);
     setEditEstMinutes(task.estimated_minutes ? String(task.estimated_minutes) : '');
-  }, [task?.id]);
+  }, [task, editing]);
 
   useEffect(() => {
     if (!task) {
