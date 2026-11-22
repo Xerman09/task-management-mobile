@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import {
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -144,7 +146,10 @@ export default function CreateTaskModal({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={resetAndClose}>
-      <View style={styles.overlay}>
+      <KeyboardAvoidingView
+        style={styles.overlay}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
         <View style={styles.sheet}>
           {/* Header */}
           <View style={styles.header}>
@@ -473,7 +478,7 @@ export default function CreateTaskModal({
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
