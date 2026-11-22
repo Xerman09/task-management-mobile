@@ -67,12 +67,14 @@ export default function SidebarDrawer({
   const { colors, themeId, setThemeId } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [modalVisible, setModalVisible] = useState(visible);
+  const modalVisibleRef = useRef(visible);
   const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const backdropAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (docked) return;
     if (visible) {
+      modalVisibleRef.current = true;
       setModalVisible(true);
       Animated.parallel([
         Animated.timing(slideAnim, {
@@ -86,7 +88,7 @@ export default function SidebarDrawer({
           useNativeDriver: true,
         }),
       ]).start();
-    } else if (modalVisible) {
+    } else if (modalVisibleRef.current) {
       Animated.parallel([
         Animated.timing(slideAnim, {
           toValue: -DRAWER_WIDTH,
@@ -99,10 +101,11 @@ export default function SidebarDrawer({
           useNativeDriver: true,
         }),
       ]).start(() => {
+        modalVisibleRef.current = false;
         setModalVisible(false);
       });
     }
-  }, [visible, modalVisible, slideAnim, backdropAnim]);
+  }, [visible, docked, slideAnim, backdropAnim]);
 
   const counts = useMemo(() => {
     const today = getTodayYMD();
