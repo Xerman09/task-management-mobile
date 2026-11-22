@@ -68,7 +68,7 @@ export default function MatrixScreen({
         {QUADRANTS.map((q) => {
           const items = openTasks.filter((t) => t.priority === q.priority);
           return (
-            <View key={q.priority} style={[styles.quadCard, { borderTopColor: q.accent, borderTopWidth: 3 }]}>
+            <View key={q.priority} style={styles.quadCard}>
               <View style={styles.quadHeader}>
                 <View style={[styles.quadIcon, { backgroundColor: `${q.accent}22` }]}>
                   <Ionicons name={q.icon} size={15} color={q.accent} />

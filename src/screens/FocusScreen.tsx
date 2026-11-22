@@ -104,16 +104,15 @@ export default function FocusScreen({
       </View>
 
       {/* Main Timer Card */}
-      <View style={[styles.timerCard, { borderColor: `${accent}55` }]}>
+      <View style={styles.timerCard}>
         <View style={styles.timerTopRow}>
-          <View style={[styles.statusBadge, { backgroundColor: `${accent}20` }]}>
+          <View style={styles.statusBadge}>
             <View style={[styles.dot, { backgroundColor: accent }]} />
-            <Text style={[styles.statusText, { color: accent }]}>
-              {activeModeObj.isBreak ? 'REST & RECHARGE' : 'DEEP FOCUS'}
+            <Text style={styles.statusText}>
+              {activeModeObj.isBreak ? 'Break' : 'Focus'}
             </Text>
           </View>
           <View style={styles.sessionPill}>
-            <Ionicons name="flame" size={13} color={colors.amber} />
             <Text style={styles.sessionText}>{sessionsCompleted} sessions</Text>
           </View>
         </View>
@@ -137,14 +136,16 @@ export default function FocusScreen({
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.ctrlPrimary, { backgroundColor: accent }]}
+            style={[styles.ctrlPrimary, { backgroundColor: colors.textPrimary }]}
             onPress={() => {
               void triggerHaptic('light');
               setRunning((r) => !r);
             }}
           >
-            <Ionicons name={running ? 'pause' : 'play'} size={19} color="#09090b" />
-            <Text style={styles.ctrlPrimaryText}>{running ? 'Pause' : 'Start'}</Text>
+            <Ionicons name={running ? 'pause' : 'play'} size={19} color={colors.bg} />
+            <Text style={[styles.ctrlPrimaryText, { color: colors.bg }]}>
+              {running ? 'Pause' : 'Start'}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity

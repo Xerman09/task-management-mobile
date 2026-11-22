@@ -206,7 +206,7 @@ export default function ProjectsScreen({
             <Text style={styles.secondaryBtnText}>+ Folder</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.primaryBtn} onPress={openCreateProject}>
-            <Ionicons name="add" size={15} color="#09090b" />
+            <Ionicons name="add" size={15} color={colors.bg} />
             <Text style={styles.primaryBtnText}>Project</Text>
           </TouchableOpacity>
         </View>
@@ -450,12 +450,12 @@ const createStyles = (COLORS: ThemePalette) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: 4,
-      backgroundColor: COLORS.cyan,
+      backgroundColor: COLORS.textPrimary,
       paddingHorizontal: 12,
       paddingVertical: 8,
       borderRadius: 10,
     },
-    primaryBtnText: { fontSize: 12, fontWeight: '800', color: '#09090b' },
+    primaryBtnText: { fontSize: 12, fontWeight: '700', color: COLORS.bg },
     secondaryBtn: {
       flexDirection: 'row',
       alignItems: 'center',

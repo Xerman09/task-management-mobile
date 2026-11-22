@@ -238,7 +238,7 @@ export default function SidebarDrawer({
                   onOpenCreate('single');
                 }}
               >
-                <Ionicons name="add" size={16} color="#09090b" />
+                <Ionicons name="add" size={16} color={colors.bg} />
                 <Text style={styles.newTaskText}>New Task</Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -248,7 +248,7 @@ export default function SidebarDrawer({
                   onOpenCreate('ai_plan');
                 }}
               >
-                <Ionicons name="sparkles" size={14} color="#ddd6fe" />
+                <Ionicons name="sparkles-outline" size={14} color={colors.textPrimary} />
                 <Text style={styles.aiPlanText}>AI Plan</Text>
               </TouchableOpacity>
             </View>
@@ -734,12 +734,12 @@ const createStyles = (COLORS: ThemePalette) => StyleSheet.create({
     gap: 5,
     paddingVertical: 9,
     borderRadius: 10,
-    backgroundColor: COLORS.cyan,
+    backgroundColor: COLORS.textPrimary,
   },
   newTaskText: {
     fontSize: 12,
-    fontWeight: '800',
-    color: '#09090b',
+    fontWeight: '700',
+    color: COLORS.bg,
   },
   aiPlanBtn: {
     flexDirection: 'row',
@@ -749,14 +749,14 @@ const createStyles = (COLORS: ThemePalette) => StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 9,
     borderRadius: 10,
-    backgroundColor: COLORS.violetSoft,
+    backgroundColor: COLORS.card,
     borderWidth: 1,
-    borderColor: COLORS.violetBorder,
+    borderColor: COLORS.borderSubtle,
   },
   aiPlanText: {
     fontSize: 12,
-    fontWeight: '700',
-    color: '#ddd6fe',
+    fontWeight: '600',
+    color: COLORS.textPrimary,
   },
   scroll: {
     flex: 1,

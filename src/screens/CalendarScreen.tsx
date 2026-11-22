@@ -122,36 +122,21 @@ export default function CalendarScreen({
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-      {/* Gamified Stats Banner */}
+      {/* Quiet Stats Strip */}
       <View style={styles.gameBanner}>
         <View style={styles.gameStat}>
-          <View style={[styles.gameIcon, { backgroundColor: colors.amberSoft }]}>
-            <Ionicons name="trophy" size={16} color={colors.amber} />
-          </View>
-          <View>
-            <Text style={styles.gameVal}>Lv.{gamification.level}</Text>
-            <Text style={styles.gameLbl}>{gamification.xp} XP</Text>
-          </View>
+          <Text style={styles.gameVal}>Lv. {gamification.level}</Text>
+          <Text style={styles.gameLbl}>{gamification.xp} XP</Text>
         </View>
-
+        <View style={styles.statDivider} />
         <View style={styles.gameStat}>
-          <View style={[styles.gameIcon, { backgroundColor: colors.emeraldSoft }]}>
-            <Ionicons name="flame" size={16} color={colors.emerald} />
-          </View>
-          <View>
-            <Text style={styles.gameVal}>{gamification.perfectDays}</Text>
-            <Text style={styles.gameLbl}>Perfect Days</Text>
-          </View>
+          <Text style={styles.gameVal}>{gamification.perfectDays}</Text>
+          <Text style={styles.gameLbl}>Perfect Days</Text>
         </View>
-
+        <View style={styles.statDivider} />
         <View style={styles.gameStat}>
-          <View style={[styles.gameIcon, { backgroundColor: colors.cyanSoft }]}>
-            <Ionicons name="pie-chart" size={16} color={colors.cyan} />
-          </View>
-          <View>
-            <Text style={styles.gameVal}>{gamification.monthPct}%</Text>
-            <Text style={styles.gameLbl}>Month Goal</Text>
-          </View>
+          <Text style={styles.gameVal}>{gamification.monthPct}%</Text>
+          <Text style={styles.gameLbl}>Month Done</Text>
         </View>
       </View>
 
@@ -248,22 +233,22 @@ export default function CalendarScreen({
                   )}
 
                   <View style={styles.dayTopRow}>
-                    <Text
-                      style={[
-                        styles.dayNum,
-                        isToday && !isSelected && { color: colors.cyan },
-                        isSelected && { color: '#09090b', fontWeight: '800' },
-                      ]}
-                    >
-                      {cell.day}
-                    </Text>
-                    {isPerfect && (
-                      <Ionicons
-                        name="star"
-                        size={9}
-                        color={isSelected ? '#09090b' : colors.emerald}
-                      />
-                    )}
+                <Text
+                  style={[
+                    styles.dayNum,
+                    isToday && !isSelected && { color: colors.emerald },
+                    isSelected && { color: colors.bg, fontWeight: '800' },
+                  ]}
+                >
+                  {cell.day}
+                </Text>
+                {isPerfect && (
+                  <Ionicons
+                    name="star"
+                    size={9}
+                    color={isSelected ? colors.bg : colors.emerald}
+                  />
+                )}
                   </View>
 
                   {total > 0 && (
@@ -273,7 +258,7 @@ export default function CalendarScreen({
                           styles.cellBarFill,
                           {
                             width: `${pct}%`,
-                            backgroundColor: isSelected ? '#09090b' : barColor,
+                            backgroundColor: isSelected ? colors.bg : barColor,
                           },
                         ]}
                       />
@@ -335,7 +320,7 @@ export default function CalendarScreen({
             return (
               <TouchableOpacity
                 key={task.id}
-                style={[styles.taskCard, { borderLeftWidth: 3, borderLeftColor: prio.text }]}
+                style={styles.taskCard}
                 onPress={() => onSelectTask(task)}
                 activeOpacity={0.85}
               >
@@ -383,19 +368,19 @@ const createStyles = (COLORS: ThemePalette) =>
     },
     gameBanner: {
       flexDirection: 'row',
-      gap: 8,
+      alignItems: 'center',
+      backgroundColor: COLORS.surface,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: COLORS.borderSubtle,
+      paddingVertical: 11,
     },
     gameStat: {
       flex: 1,
-      flexDirection: 'row',
       alignItems: 'center',
-      gap: 8,
-      backgroundColor: COLORS.surface,
-      borderRadius: 14,
-      borderWidth: 1,
-      borderColor: COLORS.border,
-      padding: 10,
+      gap: 2,
     },
+    statDivider: { width: 1, height: 22, backgroundColor: COLORS.borderSubtle },
     gameIcon: {
       width: 32,
       height: 32,
@@ -403,8 +388,8 @@ const createStyles = (COLORS: ThemePalette) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    gameVal: { fontSize: 15, fontWeight: '800', color: COLORS.textPrimary },
-    gameLbl: { fontSize: 10, fontWeight: '600', color: COLORS.textMuted },
+    gameVal: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary },
+    gameLbl: { fontSize: 10, fontWeight: '500', color: COLORS.textMuted },
     monthCard: {
       backgroundColor: COLORS.surface,
       borderRadius: 16,
@@ -457,9 +442,9 @@ const createStyles = (COLORS: ThemePalette) =>
       right: 0,
       bottom: 0,
     },
-    dayToday: { borderColor: COLORS.cyan, borderWidth: 1.5 },
-    dayPerfect: { borderColor: 'rgba(16, 185, 129, 0.55)' },
-    daySelected: { backgroundColor: COLORS.cyan, borderColor: COLORS.cyan },
+    dayToday: { borderColor: COLORS.border, borderWidth: 1.5 },
+    dayPerfect: { borderColor: 'rgba(16, 185, 129, 0.4)' },
+    daySelected: { backgroundColor: COLORS.textPrimary, borderColor: COLORS.textPrimary },
     dayTopRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
     dayNum: { fontSize: 12, fontWeight: '700', color: COLORS.textPrimary },
     cellBarTrack: {

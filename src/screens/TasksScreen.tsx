@@ -195,7 +195,7 @@ export default function TasksScreen({
             }
           }}
         >
-          <Ionicons name="add" size={18} color="#09090b" />
+          <Ionicons name="add" size={18} color={colors.bg} />
           <Text style={styles.quickAddBtnText}>Add</Text>
         </TouchableOpacity>
       </View>
@@ -257,7 +257,6 @@ export default function TasksScreen({
                   key={task.id}
                   style={[
                     styles.card,
-                    { borderLeftWidth: 3, borderLeftColor: prio.text },
                     isCompleted && styles.cardDone,
                   ]}
                 >
@@ -486,12 +485,12 @@ const createStyles = (COLORS: ThemePalette) => StyleSheet.create({
     height: 42,
     paddingHorizontal: 14,
     borderRadius: 10,
-    backgroundColor: COLORS.cyan,
+    backgroundColor: COLORS.textPrimary,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
-  quickAddBtnText: { fontSize: 13, fontWeight: '800', color: '#09090b' },
+  quickAddBtnText: { fontSize: 13, fontWeight: '700', color: COLORS.bg },
   statusChip: {
     paddingHorizontal: 8,
     paddingVertical: 2,
@@ -518,12 +517,12 @@ const createStyles = (COLORS: ThemePalette) => StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.borderSubtle,
     backgroundColor: COLORS.surface,
   },
-  queueChipActive: { backgroundColor: COLORS.cyanSoft, borderColor: COLORS.cyanBorder },
+  queueChipActive: { backgroundColor: COLORS.textPrimary, borderColor: COLORS.textPrimary },
   queueChipText: { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary },
-  queueChipTextActive: { color: '#67e8f9' },
+  queueChipTextActive: { color: COLORS.bg, fontWeight: '700' },
   activeProjectBanner: {
     marginHorizontal: 16,
     marginTop: 8,
