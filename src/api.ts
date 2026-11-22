@@ -176,6 +176,7 @@ export async function checkSyncState(fingerprint: string): Promise<{
   success: boolean;
   has_changes?: boolean;
   fingerprint?: string;
+  message?: string;
 }> {
   return apiFetch(`/sync/check.php?fingerprint=${encodeURIComponent(fingerprint)}`, {
     method: 'GET',

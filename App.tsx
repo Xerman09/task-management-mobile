@@ -240,7 +240,12 @@ function AppContent() {
       isSyncingRef.current = true;
       try {
         const res = await checkSyncState(syncFingerprintRef.current);
-        if (res.success && res.fingerprint) {
+        if (!res.success && res.message?.toLowerCase().includes('unauthorized')) {
+          await clearSession();
+          syncFingerprintRef.current = '';
+          setUser(null);
+          showToast('Session expired. Please sign in again.');
+        } else if (res.success && res.fingerprint) {
           if (!syncFingerprintRef.current) {
             syncFingerprintRef.current = res.fingerprint;
           } else if (res.has_changes) {
