@@ -85,9 +85,11 @@ export default function TaskDetailModal({
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [commentInput, setCommentInput] = useState('');
   const [postingComment, setPostingComment] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
     setEditing(false);
+    setFormError(null);
   }, [task?.id]);
 
   useEffect(() => {
@@ -136,14 +138,23 @@ export default function TaskDetailModal({
 
   const handleSaveEdits = async () => {
     const trimmed = editTitle.trim();
-    if (!trimmed) return;
+    if (!trimmed) {
+      setFormError('Task title is required.');
+      return;
+    }
+    const trimmedDue = editDueDate.trim();
+    if (trimmedDue && !/^\d{4}-\d{2}-\d{2}$/.test(trimmedDue)) {
+      setFormError('Due date must be in YYYY-MM-DD format.');
+      return;
+    }
+    setFormError(null);
     setSaving(true);
     try {
       const parsedMins = editEstMinutes.trim() ? parseInt(editEstMinutes.trim(), 10) : null;
       await onUpdateTaskFields(task.id, {
         title: trimmed,
         description: editDescription.trim() || null,
-        due_date: editDueDate.trim() || null,
+        due_date: trimmedDue || null,
         recurrence: editRecurrence,
         project_id: editProjectId,
         estimated_minutes: parsedMins && !Number.isNaN(parsedMins) ? parsedMins : null,
@@ -179,12 +190,17 @@ export default function TaskDetailModal({
     const body = commentInput.trim();
     if (!body || postingComment) return;
     setPostingComment(true);
+    setFormError(null);
     try {
       const res = await createTaskComment(task.id, body);
       if (res.success && res.comment) {
         setComments((prev) => [...prev, res.comment!]);
         setCommentInput('');
+      } else {
+        setFormError(res.message || 'Failed to post comment.');
       }
+    } catch {
+      setFormError('Network error posting comment.');
     } finally {
       setPostingComment(false);
     }
@@ -231,6 +247,12 @@ export default function TaskDetailModal({
           </View>
 
           <ScrollView style={styles.body} contentContainerStyle={{ gap: 16, paddingBottom: 28 }}>
+            {formError && (
+              <View style={styles.errorBanner}>
+                <Ionicons name="alert-circle-outline" size={15} color={colors.rose} />
+                <Text style={styles.errorBannerText}>{formError}</Text>
+              </View>
+            )}
             {editing ? (
               <View style={styles.editCard}>
                 <Text style={styles.sectionLabel}>TITLE</Text>
@@ -748,4 +770,16 @@ const createStyles = (COLORS: ThemePalette) => StyleSheet.create({
   commentAuthor: { fontSize: 12, fontWeight: '700', color: COLORS.textPrimary },
   commentDate: { fontSize: 10, color: COLORS.textMuted },
   commentBody: { fontSize: 12, color: COLORS.textSecondary, lineHeight: 18 },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: COLORS.roseSoft,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.35)',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  errorBannerText: { flex: 1, fontSize: 12, fontWeight: '600', color: '#fca5a5' },
 });
