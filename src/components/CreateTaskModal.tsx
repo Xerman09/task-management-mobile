@@ -33,8 +33,8 @@ interface CreateTaskModalProps {
     projectId: number | null;
     dueDate?: string;
     steps: string[];
-  }) => void;
-  onImportAiPlan: (items: ParsedPlanTask[], projectId: number | null) => void;
+  }) => Promise<boolean>;
+  onImportAiPlan: (items: ParsedPlanTask[], projectId: number | null) => Promise<boolean>;
   onShowToast: (msg: string) => void;
 }
 
@@ -61,6 +61,7 @@ export default function CreateTaskModal({
   const [aiPlanText, setAiPlanText] = useState('');
   const [showFormat, setShowFormat] = useState(false);
   const [copiedType, setCopiedType] = useState<'prompt' | 'format' | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   React.useEffect(() => {
     if (visible) {
@@ -102,24 +103,41 @@ export default function CreateTaskModal({
     onClose();
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (submitting) return;
+    const trimmedDue = dueDate.trim();
+    if (trimmedDue && !/^\d{4}-\d{2}-\d{2}$/.test(trimmedDue)) {
+      onShowToast('Please enter a valid date (YYYY-MM-DD)');
+      return;
+    }
+
     if (mode === 'ai_plan') {
       if (parsedTasks.length === 0) return;
-      onImportAiPlan(parsedTasks, projectId);
-      resetAndClose();
+      setSubmitting(true);
+      try {
+        const ok = await onImportAiPlan(parsedTasks, projectId);
+        if (ok) resetAndClose();
+      } finally {
+        setSubmitting(false);
+      }
       return;
     }
 
     if (!title.trim()) return;
-    onCreateSingle({
-      title: title.trim(),
-      description: description.trim() || undefined,
-      priority,
-      projectId,
-      dueDate: dueDate.trim() || undefined,
-      steps,
-    });
-    resetAndClose();
+    setSubmitting(true);
+    try {
+      const ok = await onCreateSingle({
+        title: title.trim(),
+        description: description.trim() || undefined,
+        priority,
+        projectId,
+        dueDate: trimmedDue || undefined,
+        steps,
+      });
+      if (ok) resetAndClose();
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const priorities: TaskPriority[] = ['low', 'medium', 'high', 'urgent'];
@@ -441,6 +459,7 @@ export default function CreateTaskModal({
                   (mode === 'ai_plan' && parsedTasks.length === 0)) && { opacity: 0.45 },
               ]}
               disabled={
+                submitting ||
                 (mode === 'single' && !title.trim()) ||
                 (mode === 'ai_plan' && parsedTasks.length === 0)
               }

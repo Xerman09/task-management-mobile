@@ -485,7 +485,7 @@ function AppContent() {
     projectId: number | null;
     dueDate?: string;
     steps: string[];
-  }) => {
+  }): Promise<boolean> => {
     try {
       const res = await createTask({
         title: data.title,
@@ -499,15 +499,21 @@ function AppContent() {
         if (res.sync_fingerprint) syncFingerprintRef.current = res.sync_fingerprint;
         setTasks((prev) => [res.task!, ...prev]);
         showToast('Task created');
+        return true;
       } else {
         showToast(res.message || 'Failed to create task');
+        return false;
       }
     } catch {
       showToast('Network error creating task');
+      return false;
     }
   };
 
-  const handleImportAiPlan = async (items: ParsedPlanTask[], projectId: number | null) => {
+  const handleImportAiPlan = async (
+    items: ParsedPlanTask[],
+    projectId: number | null
+  ): Promise<boolean> => {
     try {
       const res = await batchCreateTasks(
         items.map((pt) => ({
@@ -527,11 +533,14 @@ function AppContent() {
         setTasks((prev) => [...reversed, ...prev]);
         const totalSteps = items.reduce((sum, item) => sum + item.steps.length, 0);
         showToast(`Imported ${res.tasks.length} tasks with ${totalSteps} steps`);
+        return true;
       } else {
         showToast(res.message || 'Failed to import AI plan');
+        return false;
       }
     } catch {
       showToast('Network error importing AI plan');
+      return false;
     }
   };
 
