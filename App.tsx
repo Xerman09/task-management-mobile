@@ -893,7 +893,7 @@ function AppContent() {
               setCreateVisible(true);
             }}
           >
-            <Ionicons name="add" size={26} color="#09090b" />
+            <Ionicons name="add" size={26} color={colors.bg} />
           </TouchableOpacity>
         )}
 
@@ -1106,12 +1106,9 @@ const createStyles = (COLORS: ThemePalette) => StyleSheet.create({
   },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   menuBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: COLORS.card,
-    borderWidth: 1,
-    borderColor: COLORS.borderSubtle,
+    width: 34,
+    height: 34,
+    borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 2,
@@ -1126,27 +1123,24 @@ const createStyles = (COLORS: ThemePalette) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  brandTitle: { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary },
+  brandTitle: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary, letterSpacing: -0.3 },
   aiShortcutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    paddingHorizontal: 10,
+    paddingHorizontal: 11,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: COLORS.violetSoft,
-    borderWidth: 1,
-    borderColor: COLORS.violetBorder,
-  },
-  aiShortcutText: { fontSize: 11, fontWeight: '700', color: '#ddd6fe' },
-  topRightRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  topIconBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
     backgroundColor: COLORS.card,
     borderWidth: 1,
     borderColor: COLORS.borderSubtle,
+  },
+  aiShortcutText: { fontSize: 11, fontWeight: '600', color: COLORS.textPrimary },
+  topRightRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  topIconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1181,15 +1175,15 @@ const createStyles = (COLORS: ThemePalette) => StyleSheet.create({
     position: 'absolute',
     right: 18,
     bottom: 84,
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    backgroundColor: COLORS.cyan,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: COLORS.textPrimary,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     elevation: 6,
   },

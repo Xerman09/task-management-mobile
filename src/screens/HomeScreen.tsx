@@ -31,7 +31,6 @@ export default function HomeScreen({
   const styles = useMemo(() => createStyles(colors), [colors]);
   const todayStr = getTodayYMD();
 
-  // Compact inline Pomodoro clock state
   const [pomoMode, setPomoMode] = useState<'focus' | 'break'>('focus');
   const [pomoSeconds, setPomoSeconds] = useState(25 * 60);
   const [pomoRunning, setPomoRunning] = useState(false);
@@ -55,6 +54,7 @@ export default function HomeScreen({
   const pomoMins = Math.floor(pomoSeconds / 60);
   const pomoSecs = pomoSeconds % 60;
   const pomoFormatted = `${pomoMins < 10 ? '0' : ''}${pomoMins}:${pomoSecs < 10 ? '0' : ''}${pomoSecs}`;
+
   const total = tasks.length;
   const completed = tasks.filter((t) => t.status === 'completed').length;
   const completionPct = total > 0 ? Math.round((completed / total) * 100) : 0;
@@ -67,7 +67,7 @@ export default function HomeScreen({
   );
   const focusTasks = [...overdueTasks, ...dueTodayTasks].slice(0, 6);
 
-  const { xp, level, levelPct, xpInLevel, rankTitle, perfectDays } = useMemo(() => {
+  const { xp, level, levelPct, xpInLevel } = useMemo(() => {
     const byDay: Record<string, { total: number; done: number }> = {};
     let doneStepsCount = 0;
     for (const t of tasks) {
@@ -84,170 +84,136 @@ export default function HomeScreen({
     const totalXp = completed * 25 + doneStepsCount * 5 + perf * 50;
     const lvl = Math.floor(totalXp / 250) + 1;
     const inLvl = totalXp % 250;
-    const pct = Math.round((inLvl / 250) * 100);
-    const rank =
-      lvl >= 10
-        ? 'Flow Legend'
-        : lvl >= 6
-          ? 'Task Master'
-          : lvl >= 3
-            ? 'Focus Knight'
-            : 'Task Apprentice';
     return {
       xp: totalXp,
       level: lvl,
-      levelPct: pct,
+      levelPct: Math.round((inLvl / 250) * 100),
       xpInLevel: inLvl,
-      rankTitle: rank,
-      perfectDays: perf,
     };
   }, [tasks, completed]);
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-      {/* Compact Gamified Hero Card */}
-      <View style={styles.heroCard}>
-        <View style={styles.heroTopRow}>
+      {/* Editorial Greeting & Quiet Level Progress */}
+      <View style={styles.headerBlock}>
+        <View style={styles.headerTop}>
           <View style={{ flex: 1 }}>
-            <View style={styles.levelBadgeRow}>
-              <View style={styles.levelPill}>
-                <Ionicons name="trophy" size={11} color={colors.amber} />
-                <Text style={styles.levelPillText}>{rankTitle.toUpperCase()}</Text>
-              </View>
-              <Text style={styles.xpText}>{xp} XP</Text>
-            </View>
-            <Text style={styles.greeting}>Hi, {user.name.split(' ')[0]}</Text>
+            <Text style={styles.dateText}>{formatDisplayDate(todayStr)}</Text>
+            <Text style={styles.greeting}>Good day, {user.name.split(' ')[0]}</Text>
           </View>
-
-          <View style={styles.levelCrest}>
-            <Text style={styles.levelCrestLabel}>LV</Text>
-            <Text style={styles.levelCrestNum}>{level}</Text>
+          <View style={styles.levelTag}>
+            <Text style={styles.levelTagText}>Lv. {level}</Text>
+            <Text style={styles.levelXpText}>{xp} XP</Text>
           </View>
         </View>
 
-        {/* Single Clean Level XP Bar */}
-        <View style={styles.barsWrap}>
-          <View style={styles.barHeaderRow}>
-            <Text style={styles.barLabel}>
-              {todayAllTasks.length > 0
-                ? `Today's Quest: ${todayDone}/${todayAllTasks.length} (${todayPct}%)`
-                : `Level ${level + 1} Progress`}
-            </Text>
-            <Text style={styles.barVal}>{xpInLevel}/250 XP</Text>
-          </View>
-          <View style={styles.heroProgressTrack}>
+        <View style={styles.progressWrap}>
+          <View style={styles.progressTrack}>
             <View
               style={[
-                styles.heroProgressFill,
-                { width: `${Math.max(4, levelPct)}%`, backgroundColor: colors.amber },
+                styles.progressFill,
+                {
+                  width: `${Math.max(3, todayAllTasks.length > 0 ? todayPct : levelPct)}%`,
+                },
               ]}
             />
           </View>
+          <View style={styles.progressMetaRow}>
+            <Text style={styles.progressMeta}>
+              {todayAllTasks.length > 0
+                ? `${todayDone} of ${todayAllTasks.length} today`
+                : `${xpInLevel}/250 XP to Lv. ${level + 1}`}
+            </Text>
+            <Text style={styles.progressMeta}>{completionPct}% overall</Text>
+          </View>
         </View>
 
-        {/* Quick Actions */}
-        <View style={styles.quickActions}>
+        <View style={styles.actionsRow}>
           <TouchableOpacity
-            style={[styles.actionBtn, styles.actionPrimary]}
+            style={styles.btnPrimary}
             activeOpacity={0.85}
             onPress={() => onOpenCreate('single')}
           >
-            <Ionicons name="add-circle" size={17} color="#09090b" />
-            <Text style={styles.actionPrimaryText}>New Task</Text>
+            <Ionicons name="add" size={17} color={colors.bg} />
+            <Text style={styles.btnPrimaryText}>New Task</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.actionBtn, styles.actionAi]}
+            style={styles.btnSecondary}
             activeOpacity={0.85}
             onPress={() => onOpenCreate('ai_plan')}
           >
-            <Ionicons name="sparkles" size={15} color="#ddd6fe" />
-            <Text style={styles.actionAiText}>AI Plan</Text>
+            <Ionicons name="sparkles-outline" size={15} color={colors.textPrimary} />
+            <Text style={styles.btnSecondaryText}>AI Plan</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Compact 1-Row Stat Strip */}
+      {/* Clean 4-Column Stat Strip */}
       <View style={styles.statStrip}>
-        <TouchableOpacity style={styles.statStripItem} onPress={() => onGoToTasks('today')}>
-          <Text style={[styles.statStripVal, { color: colors.amber }]}>{dueTodayTasks.length}</Text>
-          <Text style={styles.statStripLbl}>Today</Text>
+        <TouchableOpacity style={styles.statItem} onPress={() => onGoToTasks('today')}>
+          <Text style={styles.statVal}>{dueTodayTasks.length}</Text>
+          <Text style={styles.statLbl}>Today</Text>
         </TouchableOpacity>
         <View style={styles.statDivider} />
-        <TouchableOpacity style={styles.statStripItem} onPress={() => onGoToTasks('missed')}>
-          <Text
-            style={[
-              styles.statStripVal,
-              { color: overdueTasks.length > 0 ? colors.rose : colors.textPrimary },
-            ]}
-          >
+        <TouchableOpacity style={styles.statItem} onPress={() => onGoToTasks('missed')}>
+          <Text style={[styles.statVal, overdueTasks.length > 0 && { color: colors.rose }]}>
             {overdueTasks.length}
           </Text>
-          <Text style={styles.statStripLbl}>Missed</Text>
+          <Text style={styles.statLbl}>Overdue</Text>
         </TouchableOpacity>
         <View style={styles.statDivider} />
-        <TouchableOpacity style={styles.statStripItem} onPress={() => onGoToTasks('all')}>
-          <Text style={styles.statStripVal}>{total - completed}</Text>
-          <Text style={styles.statStripLbl}>Open</Text>
+        <TouchableOpacity style={styles.statItem} onPress={() => onGoToTasks('all')}>
+          <Text style={styles.statVal}>{total - completed}</Text>
+          <Text style={styles.statLbl}>Open</Text>
         </TouchableOpacity>
         <View style={styles.statDivider} />
-        <TouchableOpacity style={styles.statStripItem} onPress={() => onGoToTasks('all')}>
-          <Text style={[styles.statStripVal, { color: colors.cyan }]}>{completionPct}%</Text>
-          <Text style={styles.statStripLbl}>Done</Text>
+        <TouchableOpacity style={styles.statItem} onPress={() => onGoToTasks('all')}>
+          <Text style={styles.statVal}>{completed}</Text>
+          <Text style={styles.statLbl}>Done</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Compact Inline Pomodoro Clock */}
-      <View style={styles.pomoCard}>
-        <View style={styles.pomoLeft}>
-          <View
-            style={[
-              styles.pomoIconBox,
-              { backgroundColor: pomoMode === 'focus' ? colors.cyanSoft : colors.emeraldSoft },
-            ]}
-          >
-            <Ionicons
-              name="timer-outline"
-              size={16}
-              color={pomoMode === 'focus' ? colors.cyan : colors.emerald}
-            />
-          </View>
+      {/* Quiet Inline Focus Timer */}
+      <View style={styles.pomoRow}>
+        <TouchableOpacity
+          style={styles.pomoLeft}
+          activeOpacity={0.75}
+          onPress={onTogglePomodoro}
+        >
+          <Ionicons name="timer-outline" size={17} color={colors.textSecondary} />
           <Text style={styles.pomoClock}>{pomoFormatted}</Text>
-          <TouchableOpacity
-            style={[styles.pomoModeBtn, pomoMode === 'focus' && styles.pomoModeBtnActive]}
-            onPress={() => {
-              setPomoRunning(false);
-              setPomoMode('focus');
-              setPomoSeconds(25 * 60);
-            }}
-          >
-            <Text style={[styles.pomoModeText, pomoMode === 'focus' && styles.pomoModeTextActive]}>
-              Focus
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.pomoModeBtn, pomoMode === 'break' && styles.pomoModeBtnActive]}
-            onPress={() => {
-              setPomoRunning(false);
-              setPomoMode('break');
-              setPomoSeconds(5 * 60);
-            }}
-          >
-            <Text style={[styles.pomoModeText, pomoMode === 'break' && styles.pomoModeTextActive]}>
-              Break
-            </Text>
-          </TouchableOpacity>
-        </View>
+          <Text style={styles.pomoModeLbl}>
+            {pomoMode === 'focus' ? 'Focus' : 'Break'}
+          </Text>
+        </TouchableOpacity>
 
-        <View style={styles.pomoRight}>
+        <View style={styles.pomoControls}>
           <TouchableOpacity
-            style={styles.pomoPlayBtn}
+            style={styles.pomoSwitch}
+            onPress={() => {
+              const next = pomoMode === 'focus' ? 'break' : 'focus';
+              setPomoRunning(false);
+              setPomoMode(next);
+              setPomoSeconds(next === 'break' ? 5 * 60 : 25 * 60);
+            }}
+          >
+            <Text style={styles.pomoSwitchText}>
+              {pomoMode === 'focus' ? '5m Break' : '25m Focus'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.pomoPlay}
             onPress={() => setPomoRunning((r) => !r)}
           >
-            <Ionicons name={pomoRunning ? 'pause' : 'play'} size={14} color="#09090b" />
+            <Ionicons
+              name={pomoRunning ? 'pause' : 'play'}
+              size={14}
+              color={colors.bg}
+            />
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.pomoResetBtn}
+            style={styles.pomoReset}
             onPress={() => {
               setPomoRunning(false);
               setPomoSeconds(pomoMode === 'focus' ? 25 * 60 : 5 * 60);
@@ -258,50 +224,43 @@ export default function HomeScreen({
         </View>
       </View>
 
-      {/* Today's & Overdue Focus */}
+      {/* Focus Queue */}
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Today&apos;s Focus &amp; Urgent</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          {onTogglePomodoro && (
-            <TouchableOpacity style={styles.sectionPillBtn} onPress={onTogglePomodoro}>
-              <Ionicons name="timer-outline" size={13} color={colors.cyan} />
-              <Text style={styles.sectionPillText}>Focus</Text>
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity style={styles.sectionPillBtn} onPress={() => onGoToTasks('all')}>
-            <Text style={styles.sectionPillText}>View All</Text>
-            <Ionicons name="arrow-forward" size={12} color={colors.cyan} />
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.sectionTitle}>Up Next</Text>
+        <TouchableOpacity onPress={() => onGoToTasks('all')}>
+          <Text style={styles.sectionLink}>See all</Text>
+        </TouchableOpacity>
       </View>
 
       {focusTasks.length === 0 ? (
         <View style={styles.emptyCard}>
-          <Ionicons name="checkmark-circle-outline" size={28} color={colors.emerald} />
-          <Text style={styles.emptyTitle}>All caught up for today!</Text>
-          <Text style={styles.emptySub}>Tap New Task or AI Plan Import above to add work.</Text>
+          <Ionicons name="checkmark-circle-outline" size={24} color={colors.emerald} />
+          <Text style={styles.emptyTitle}>You&apos;re all caught up</Text>
+          <Text style={styles.emptySub}>Nothing overdue or scheduled for today.</Text>
         </View>
       ) : (
-        <View style={styles.list}>
-          {focusTasks.map((task) => {
+        <View style={styles.listGroup}>
+          {focusTasks.map((task, idx) => {
             const isOverdue = Boolean(task.due_date) && (task.due_date as string) < todayStr;
             const prio = PRIORITY_COLORS[task.priority];
             const doneSteps = task.subtasks.filter((s) => s.is_completed).length;
 
             return (
-              <TouchableOpacity
+              <View
                 key={task.id}
-                style={[styles.taskCard, { borderLeftWidth: 3, borderLeftColor: prio.text }]}
-                activeOpacity={0.85}
-                onPress={() => onSelectTask(task)}
+                style={[styles.taskRowWrap, idx > 0 && styles.taskRowBorder]}
               >
-                <View style={styles.taskTopRow}>
+                <TouchableOpacity
+                  style={styles.taskRow}
+                  activeOpacity={0.75}
+                  onPress={() => onSelectTask(task)}
+                >
                   <TouchableOpacity
                     onPress={() => onAdvanceStatus(task)}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   >
                     <Ionicons
-                      name={task.status === 'in_progress' ? 'ellipse-outline' : 'radio-button-off'}
+                      name={task.status === 'in_progress' ? 'disc-outline' : 'ellipse-outline'}
                       size={20}
                       color={task.status === 'in_progress' ? colors.amber : colors.textMuted}
                     />
@@ -312,58 +271,38 @@ export default function HomeScreen({
                       {task.title}
                     </Text>
                     <View style={styles.metaRow}>
+                      <View style={[styles.prioDot, { backgroundColor: prio.text }]} />
                       {task.project_name && (
-                        <View style={styles.projectPill}>
-                          <View
-                            style={[styles.projectDot, { backgroundColor: task.project_color || colors.cyan }]}
-                          />
-                          <Text style={styles.projectText}>{task.project_name}</Text>
-                        </View>
+                        <Text style={styles.metaText}>{task.project_name}</Text>
                       )}
-                      <View style={[styles.prioPill, { backgroundColor: prio.bg, borderColor: prio.border }]}>
-                        <Text style={[styles.prioText, { color: prio.text }]}>{task.priority}</Text>
-                      </View>
                       {task.due_date && (
-                        <Text style={[styles.dueText, isOverdue && { color: colors.rose }]}>
+                        <Text style={[styles.metaText, isOverdue && { color: colors.rose }]}>
+                          {task.project_name ? '· ' : ''}
                           {task.due_date === todayStr ? 'Today' : formatDisplayDate(task.due_date)}
                         </Text>
                       )}
-                      <View style={styles.xpRewardPill}>
-                        <Text style={styles.xpRewardText}>+25 XP</Text>
-                      </View>
+                      {task.subtasks.length > 0 && (
+                        <Text style={styles.metaText}>
+                          · {doneSteps}/{task.subtasks.length} steps
+                        </Text>
+                      )}
                     </View>
                   </View>
-                </View>
+
+                  <Ionicons name="chevron-forward" size={15} color={colors.textMuted} />
+                </TouchableOpacity>
 
                 {task.subtasks.length > 0 && (
-                  <View style={styles.stepsBox}>
-                    <View style={styles.stepsHeader}>
-                      <Ionicons name="list-outline" size={13} color={colors.cyan} />
-                      <Text style={styles.stepsLabel}>
-                        Steps ({doneSteps}/{task.subtasks.length})
-                      </Text>
-                    </View>
-                    <View style={styles.miniProgressTrack}>
-                      <View
-                        style={[
-                          styles.miniProgressFill,
-                          {
-                            width: `${Math.round((doneSteps / task.subtasks.length) * 100)}%`,
-                            backgroundColor: doneSteps === task.subtasks.length ? colors.emerald : colors.cyan,
-                          },
-                        ]}
-                      />
-                    </View>
-                    {task.subtasks.slice(0, 3).map((sub) => (
+                  <View style={styles.stepsInline}>
+                    {task.subtasks.slice(0, 2).map((sub) => (
                       <TouchableOpacity
                         key={sub.id}
                         style={styles.stepRow}
                         onPress={() => onToggleSubtask(sub)}
-                        activeOpacity={0.7}
                       >
                         <Ionicons
                           name={sub.is_completed ? 'checkbox' : 'square-outline'}
-                          size={16}
+                          size={15}
                           color={sub.is_completed ? colors.emerald : colors.textMuted}
                         />
                         <Text
@@ -376,7 +315,7 @@ export default function HomeScreen({
                     ))}
                   </View>
                 )}
-              </TouchableOpacity>
+              </View>
             );
           })}
         </View>
@@ -385,284 +324,157 @@ export default function HomeScreen({
   );
 }
 
-const createStyles = (COLORS: ThemePalette) => StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: COLORS.bg },
-  content: { padding: 16, paddingBottom: 100, gap: 16, maxWidth: 960, width: '100%', alignSelf: 'center' },
-  heroCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: COLORS.cyanBorder,
-    padding: 16,
-    gap: 12,
-  },
-  heroTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  levelBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-  levelPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 999,
-    backgroundColor: COLORS.amberSoft,
-    borderWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.35)',
-  },
-  levelPillText: { fontSize: 10, fontWeight: '800', color: COLORS.amber, letterSpacing: 0.5 },
-  xpText: { fontSize: 11, fontWeight: '800', color: COLORS.cyan },
-  levelCrest: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: COLORS.amberSoft,
-    borderWidth: 1.5,
-    borderColor: 'rgba(245, 158, 11, 0.45)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  levelCrestLabel: { fontSize: 9, fontWeight: '800', color: COLORS.amber, letterSpacing: 0.6 },
-  levelCrestNum: { fontSize: 19, fontWeight: '900', color: COLORS.textPrimary, lineHeight: 21 },
-  statStrip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    paddingVertical: 11,
-  },
-  statStripItem: { flex: 1, alignItems: 'center', gap: 2 },
-  statStripVal: { fontSize: 17, fontWeight: '800', color: COLORS.textPrimary },
-  statStripLbl: { fontSize: 10, fontWeight: '600', color: COLORS.textMuted },
-  statDivider: { width: 1, height: 24, backgroundColor: COLORS.borderSubtle },
-  pomoCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: COLORS.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-  },
-  pomoLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  pomoIconBox: {
-    width: 30,
-    height: 30,
-    borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pomoClock: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: COLORS.textPrimary,
-    fontVariant: ['tabular-nums'],
-  },
-  pomoModeBtn: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: COLORS.card,
-    borderWidth: 1,
-    borderColor: COLORS.borderSubtle,
-  },
-  pomoModeBtnActive: { backgroundColor: COLORS.cyanSoft, borderColor: COLORS.cyanBorder },
-  pomoModeText: { fontSize: 10, fontWeight: '700', color: COLORS.textMuted },
-  pomoModeTextActive: { color: COLORS.cyan },
-  pomoRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  pomoPlayBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 9,
-    backgroundColor: COLORS.cyan,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pomoResetBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 9,
-    backgroundColor: COLORS.card,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  heroChipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
-  heroChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderRadius: 999,
-    backgroundColor: COLORS.card,
-    borderWidth: 1,
-    borderColor: COLORS.borderSubtle,
-  },
-  heroChipText: { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary },
-  barsWrap: { gap: 5 },
-  barHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  barLabel: { fontSize: 11, fontWeight: '600', color: COLORS.textSecondary },
-  barVal: { fontSize: 11, fontWeight: '800', color: COLORS.textPrimary },
-  kicker: { fontSize: 11, fontWeight: '700', color: COLORS.cyan, letterSpacing: 0.8 },
-  greeting: { fontSize: 22, fontWeight: '800', color: COLORS.textPrimary, marginTop: 2 },
-  heroSummary: { fontSize: 12, color: COLORS.textSecondary, marginTop: 4 },
-  heroPctBadge: {
-    width: 58,
-    height: 58,
-    borderRadius: 16,
-    backgroundColor: COLORS.cyanSoft,
-    borderWidth: 1,
-    borderColor: COLORS.cyanBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  heroPctValue: { fontSize: 17, fontWeight: '800', color: COLORS.cyan },
-  heroPctLabel: { fontSize: 9, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 0.6 },
-  heroProgressTrack: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: COLORS.borderSubtle,
-    overflow: 'hidden',
-  },
-  heroProgressFill: {
-    height: '100%',
-    borderRadius: 3,
-    backgroundColor: COLORS.cyan,
-  },
-  quickActions: { flexDirection: 'row', gap: 10 },
-  actionBtn: {
-    flex: 1,
-    height: 44,
-    borderRadius: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 7,
-  },
-  actionPrimary: { backgroundColor: COLORS.cyan },
-  actionPrimaryText: { fontSize: 13, fontWeight: '800', color: '#09090b' },
-  actionAi: { backgroundColor: COLORS.violetSoft, borderWidth: 1, borderColor: COLORS.violetBorder },
-  actionAiText: { fontSize: 13, fontWeight: '700', color: '#ddd6fe' },
-  kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  kpiCard: {
-    flexGrow: 1,
-    minWidth: 150,
-    backgroundColor: COLORS.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    padding: 14,
-  },
-  kpiTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  kpiIconBox: {
-    width: 26,
-    height: 26,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  kpiLabel: { fontSize: 11, fontWeight: '600', color: COLORS.textSecondary },
-  kpiValue: { fontSize: 24, fontWeight: '800', color: COLORS.textPrimary, marginTop: 4 },
-  kpiSub: { fontSize: 11, color: COLORS.textMuted, marginTop: 6 },
-  progressTrack: {
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: COLORS.borderSubtle,
-    marginTop: 8,
-    overflow: 'hidden',
-  },
-  progressFill: { height: '100%', borderRadius: 3 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
-  sectionLink: { fontSize: 12, fontWeight: '600', color: COLORS.cyan },
-  sectionPillBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  sectionPillText: { fontSize: 11, fontWeight: '700', color: COLORS.cyan },
-  miniProgressTrack: {
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: COLORS.borderSubtle,
-    overflow: 'hidden',
-    marginBottom: 4,
-  },
-  miniProgressFill: { height: '100%', borderRadius: 2 },
-  xpRewardPill: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 999,
-    backgroundColor: COLORS.emeraldSoft,
-  },
-  xpRewardText: { fontSize: 9, fontWeight: '800', color: COLORS.emerald },
-  emptyCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    padding: 24,
-    alignItems: 'center',
-    gap: 6,
-  },
-  emptyTitle: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
-  emptySub: { fontSize: 12, color: COLORS.textMuted, textAlign: 'center' },
-  list: { gap: 10 },
-  taskCard: {
-    backgroundColor: COLORS.card,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    padding: 14,
-    gap: 10,
-  },
-  taskTopRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  taskTitle: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary, lineHeight: 19 },
-  metaRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 6 },
-  projectPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 6,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  projectDot: { width: 6, height: 6, borderRadius: 3 },
-  projectText: { fontSize: 10, color: COLORS.textSecondary, fontWeight: '600' },
-  prioPill: {
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 6,
-    borderWidth: 1,
-  },
-  prioText: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
-  dueText: { fontSize: 11, color: COLORS.textSecondary, fontWeight: '600' },
-  stepsBox: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: COLORS.borderSubtle,
-    padding: 10,
-    gap: 6,
-  },
-  stepsHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  stepsLabel: { fontSize: 11, fontWeight: '700', color: COLORS.cyan },
-  stepRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 2 },
-  stepText: { flex: 1, fontSize: 12, color: COLORS.textSecondary },
-  stepTextDone: { textDecorationLine: 'line-through', color: COLORS.textMuted },
-});
-
+const createStyles = (COLORS: ThemePalette) =>
+  StyleSheet.create({
+    scroll: { flex: 1, backgroundColor: COLORS.bg },
+    content: {
+      padding: 18,
+      paddingBottom: 100,
+      gap: 16,
+      maxWidth: 820,
+      width: '100%',
+      alignSelf: 'center',
+    },
+    headerBlock: { gap: 14 },
+    headerTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+    dateText: { fontSize: 12, fontWeight: '600', color: COLORS.textMuted },
+    greeting: { fontSize: 24, fontWeight: '700', color: COLORS.textPrimary, marginTop: 2, letterSpacing: -0.4 },
+    levelTag: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 999,
+      backgroundColor: COLORS.surface,
+      borderWidth: 1,
+      borderColor: COLORS.borderSubtle,
+    },
+    levelTagText: { fontSize: 11, fontWeight: '700', color: COLORS.textPrimary },
+    levelXpText: { fontSize: 11, fontWeight: '600', color: COLORS.textMuted },
+    progressWrap: { gap: 6 },
+    progressTrack: {
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: COLORS.borderSubtle,
+      overflow: 'hidden',
+    },
+    progressFill: { height: '100%', borderRadius: 2, backgroundColor: COLORS.emerald },
+    progressMetaRow: { flexDirection: 'row', justifyContent: 'space-between' },
+    progressMeta: { fontSize: 11, color: COLORS.textMuted, fontWeight: '500' },
+    actionsRow: { flexDirection: 'row', gap: 10 },
+    btnPrimary: {
+      flex: 1,
+      height: 42,
+      borderRadius: 10,
+      backgroundColor: COLORS.textPrimary,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+    },
+    btnPrimaryText: { fontSize: 13, fontWeight: '700', color: COLORS.bg },
+    btnSecondary: {
+      flex: 1,
+      height: 42,
+      borderRadius: 10,
+      backgroundColor: COLORS.surface,
+      borderWidth: 1,
+      borderColor: COLORS.border,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+    },
+    btnSecondaryText: { fontSize: 13, fontWeight: '600', color: COLORS.textPrimary },
+    statStrip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: COLORS.surface,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: COLORS.borderSubtle,
+      paddingVertical: 12,
+    },
+    statItem: { flex: 1, alignItems: 'center', gap: 2 },
+    statVal: { fontSize: 18, fontWeight: '700', color: COLORS.textPrimary },
+    statLbl: { fontSize: 11, fontWeight: '500', color: COLORS.textMuted },
+    statDivider: { width: 1, height: 22, backgroundColor: COLORS.borderSubtle },
+    pomoRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: COLORS.surface,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: COLORS.borderSubtle,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+    },
+    pomoLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    pomoClock: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: COLORS.textPrimary,
+      fontVariant: ['tabular-nums'],
+    },
+    pomoModeLbl: { fontSize: 12, color: COLORS.textMuted, fontWeight: '500' },
+    pomoControls: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    pomoSwitch: { paddingHorizontal: 8, paddingVertical: 4 },
+    pomoSwitchText: { fontSize: 11, fontWeight: '600', color: COLORS.textSecondary },
+    pomoPlay: {
+      width: 30,
+      height: 30,
+      borderRadius: 8,
+      backgroundColor: COLORS.textPrimary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    pomoReset: {
+      width: 30,
+      height: 30,
+      borderRadius: 8,
+      backgroundColor: COLORS.card,
+      borderWidth: 1,
+      borderColor: COLORS.borderSubtle,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    sectionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginTop: 4,
+    },
+    sectionTitle: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
+    sectionLink: { fontSize: 12, fontWeight: '600', color: COLORS.textSecondary },
+    emptyCard: {
+      backgroundColor: COLORS.surface,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: COLORS.borderSubtle,
+      padding: 24,
+      alignItems: 'center',
+      gap: 6,
+    },
+    emptyTitle: { fontSize: 14, fontWeight: '600', color: COLORS.textPrimary },
+    emptySub: { fontSize: 12, color: COLORS.textMuted, textAlign: 'center' },
+    listGroup: {
+      backgroundColor: COLORS.surface,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: COLORS.borderSubtle,
+      overflow: 'hidden',
+    },
+    taskRowWrap: { paddingHorizontal: 14, paddingVertical: 12, gap: 8 },
+    taskRowBorder: { borderTopWidth: 1, borderTopColor: COLORS.borderSubtle },
+    taskRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    taskTitle: { fontSize: 14, fontWeight: '600', color: COLORS.textPrimary, lineHeight: 19 },
+    metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'wrap' },
+    prioDot: { width: 6, height: 6, borderRadius: 3 },
+    metaText: { fontSize: 11, color: COLORS.textMuted, fontWeight: '500' },
+    stepsInline: { paddingLeft: 32, gap: 6 },
+    stepRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    stepText: { flex: 1, fontSize: 12, color: COLORS.textSecondary },
+    stepTextDone: { textDecorationLine: 'line-through', color: COLORS.textMuted },
+  });
