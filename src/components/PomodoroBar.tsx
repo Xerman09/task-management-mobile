@@ -24,23 +24,23 @@ export default function PomodoroBar({ visible, onClose, onNotify }: PomodoroBarP
   useEffect(() => {
     if (!running) return;
     const timer = setInterval(() => {
-      setSecondsLeft((prev) => {
-        if (prev <= 1) {
-          setRunning(false);
-          const nextMode = mode === 'focus' ? 'break' : 'focus';
-          setMode(nextMode);
-          onNotify?.(
-            nextMode === 'break'
-              ? 'Focus session complete! Time for a 5-minute break.'
-              : 'Break finished! Ready to focus.'
-          );
-          return nextMode === 'break' ? BREAK_SECONDS : FOCUS_SECONDS;
-        }
-        return prev - 1;
-      });
+      setSecondsLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(timer);
-  }, [running, mode, onNotify]);
+  }, [running]);
+
+  useEffect(() => {
+    if (!running || secondsLeft > 0) return;
+    setRunning(false);
+    const nextMode = mode === 'focus' ? 'break' : 'focus';
+    setMode(nextMode);
+    setSecondsLeft(nextMode === 'break' ? BREAK_SECONDS : FOCUS_SECONDS);
+    onNotify?.(
+      nextMode === 'break'
+        ? 'Focus session complete! Time for a 5-minute break.'
+        : 'Break finished! Ready to focus.'
+    );
+  }, [running, secondsLeft, mode, onNotify]);
 
   if (!visible) return null;
 

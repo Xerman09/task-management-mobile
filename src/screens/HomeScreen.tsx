@@ -39,18 +39,18 @@ export default function HomeScreen({
   useEffect(() => {
     if (!pomoRunning) return;
     const t = setInterval(() => {
-      setPomoSeconds((prev) => {
-        if (prev <= 1) {
-          setPomoRunning(false);
-          const next = pomoMode === 'focus' ? 'break' : 'focus';
-          setPomoMode(next);
-          return next === 'break' ? 5 * 60 : 25 * 60;
-        }
-        return prev - 1;
-      });
+      setPomoSeconds((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(t);
-  }, [pomoRunning, pomoMode]);
+  }, [pomoRunning]);
+
+  useEffect(() => {
+    if (!pomoRunning || pomoSeconds > 0) return;
+    setPomoRunning(false);
+    const next = pomoMode === 'focus' ? 'break' : 'focus';
+    setPomoMode(next);
+    setPomoSeconds(next === 'break' ? 5 * 60 : 25 * 60);
+  }, [pomoRunning, pomoSeconds, pomoMode]);
 
   const pomoMins = Math.floor(pomoSeconds / 60);
   const pomoSecs = pomoSeconds % 60;

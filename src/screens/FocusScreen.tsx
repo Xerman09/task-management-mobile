@@ -50,25 +50,26 @@ export default function FocusScreen({
   useEffect(() => {
     if (!running) return;
     const timer = setInterval(() => {
-      setSecondsLeft((prev) => {
-        if (prev <= 1) {
-          setRunning(false);
-          void triggerHaptic('success');
-          if (!activeModeObj.isBreak) {
-            setSessionsCompleted((s) => s + 1);
-            onNotify('Focus session complete! +25 XP');
-            setMode('short_break');
-            return 5 * 60;
-          }
-          onNotify('Break finished! Ready for next focus block.');
-          setMode('focus');
-          return 25 * 60;
-        }
-        return prev - 1;
-      });
+      setSecondsLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(timer);
-  }, [running, activeModeObj.isBreak, onNotify]);
+  }, [running]);
+
+  useEffect(() => {
+    if (!running || secondsLeft > 0) return;
+    setRunning(false);
+    void triggerHaptic('success');
+    if (!activeModeObj.isBreak) {
+      setSessionsCompleted((s) => s + 1);
+      onNotify('Focus session complete! +25 XP');
+      setMode('short_break');
+      setSecondsLeft(5 * 60);
+    } else {
+      onNotify('Break finished! Ready for next focus block.');
+      setMode('focus');
+      setSecondsLeft(25 * 60);
+    }
+  }, [running, secondsLeft, activeModeObj.isBreak, onNotify]);
 
   const selectMode = (next: FocusMode) => {
     const m = MODES.find((x) => x.id === next) || MODES[0];
@@ -355,3 +356,4 @@ const createStyles = (COLORS: ThemePalette) =>
     prioDot: { width: 7, height: 7, borderRadius: 4 },
     pickTitle: { flex: 1, fontSize: 13, fontWeight: '600', color: COLORS.textPrimary },
   });
+
