@@ -149,7 +149,7 @@ export default function WorkspaceToolsModal({
       name: whName.trim(),
       provider: whProvider,
       webhook_url: whUrl.trim(),
-      events: ['task_created', 'task_completed'],
+      events: ['task_created_urgent', 'task_completed', 'status_changed'],
     });
     if (res.success && res.webhook) {
       setWebhooks((p) => [res.webhook!, ...p]);
