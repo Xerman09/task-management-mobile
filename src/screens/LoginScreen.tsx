@@ -65,7 +65,7 @@ export default function LoginScreen({ initialServerUrl, onAuthenticated }: Login
     } catch (err) {
       setError(
         err instanceof Error
-          ? `${err.message}. Ensure XAMPP Apache is running.`
+          ? err.message
           : 'Unable to connect. Please check your connection and try again.'
       );
     } finally {
