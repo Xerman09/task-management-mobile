@@ -105,16 +105,8 @@ export default function TasksScreen({
   }, [tasks, todayStr]);
 
   const renderStatusIcon = (status: TaskStatus) => {
-    if (status === 'completed') {
-      return <Ionicons name="checkmark-circle" size={20} color={colors.emerald} />;
-    }
-    if (status === 'in_progress') {
-      return <Ionicons name="disc-outline" size={20} color={colors.amber} />;
-    }
-    if (status === 'review') {
-      return <Ionicons name="eye-outline" size={20} color={colors.indigo} />;
-    }
-    return <Ionicons name="ellipse-outline" size={20} color={colors.textMuted} />;
+    const st = getStatusVisual(status, colors);
+    return <Ionicons name={st.icon} size={20} color={st.color} />;
   };
 
   return (

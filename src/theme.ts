@@ -150,16 +150,17 @@ export function getStatusVisual(
   colors: ThemePalette,
   customColor?: string
 ): { label: string; color: string; icon: 'ellipse-outline' | 'play-circle-outline' | 'eye-outline' | 'checkmark-circle' | 'layers-outline' } {
-  if (status === 'completed') {
+  const s = (status || '').toLowerCase();
+  if (s === 'completed' || s === 'done') {
     return { label: 'Completed', color: customColor || colors.emerald, icon: 'checkmark-circle' };
   }
-  if (status === 'in_progress') {
+  if (s === 'in_progress' || s === 'in-progress' || s === 'doing') {
     return { label: 'In Progress', color: customColor || colors.amber, icon: 'play-circle-outline' };
   }
-  if (status === 'review') {
+  if (s === 'review' || s === 'in_review' || s === 'in-review' || s === 'qa' || s === 'testing') {
     return { label: 'In Review', color: customColor || colors.violet, icon: 'eye-outline' };
   }
-  if (status === 'todo') {
+  if (s === 'todo' || s === 'to_do' || s === 'to-do' || s === 'backlog') {
     return { label: 'To Do', color: customColor || colors.textMuted, icon: 'ellipse-outline' };
   }
   return {
