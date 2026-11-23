@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { DEFAULT_STATUS_COLUMNS, PRIORITY_COLORS, ThemePalette } from '../theme';
+import { DEFAULT_STATUS_COLUMNS, getStatusVisual, PRIORITY_COLORS, ThemePalette } from '../theme';
 import { useTheme } from '../ThemeContext';
 import { Project, Subtask, Task, TaskStatus } from '../types';
 import { formatDisplayDate, getTodayYMD } from '../utils/date';
@@ -278,14 +278,28 @@ export default function TasksScreen({
                       </Text>
 
                       <View style={styles.metaRow}>
-                        <TouchableOpacity
-                          style={styles.statusChip}
-                          onPress={() => onAdvanceStatus(task)}
-                        >
-                          <Text style={styles.statusChipText}>
-                            {task.status.replace('_', ' ')}
-                          </Text>
-                        </TouchableOpacity>
+                        {(() => {
+                          const taskProj = projects.find((p) => p.id === task.project_id);
+                          const customCol = taskProj?.statuses?.find((s) => s.slug === task.status);
+                          const st = getStatusVisual(task.status, colors, customCol?.color);
+                          return (
+                            <TouchableOpacity
+                              style={[
+                                styles.statusChip,
+                                {
+                                  backgroundColor: `${st.color}18`,
+                                  borderColor: `${st.color}45`,
+                                },
+                              ]}
+                              onPress={() => onAdvanceStatus(task)}
+                            >
+                              <Ionicons name={st.icon} size={11} color={st.color} />
+                              <Text style={[styles.statusChipText, { color: st.color }]}>
+                                {customCol?.label || st.label}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })()}
                         {task.project_name && (
                           <View style={styles.metaTag}>
                             <View
@@ -492,14 +506,15 @@ const createStyles = (COLORS: ThemePalette) => StyleSheet.create({
   },
   quickAddBtnText: { fontSize: 13, fontWeight: '700', color: COLORS.bg },
   statusChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingVertical: 3,
     borderRadius: 999,
-    backgroundColor: COLORS.cardElevated,
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
-  statusChipText: { fontSize: 10, fontWeight: '700', color: COLORS.textSecondary, textTransform: 'capitalize' },
+  statusChipText: { fontSize: 10, fontWeight: '700' },
   viewToggle: {
     flexDirection: 'row',
     backgroundColor: COLORS.surface,

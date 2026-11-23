@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { createTaskComment, deleteTaskComment, getTaskComments } from '../api';
-import { DEFAULT_STATUS_COLUMNS, PRIORITY_COLORS, ThemePalette } from '../theme';
+import { DEFAULT_STATUS_COLUMNS, getStatusVisual, PRIORITY_COLORS, ThemePalette } from '../theme';
 import { useTheme } from '../ThemeContext';
 import { Project, Subtask, Tag, Task, TaskComment, TaskPriority, TaskRecurrence, TaskStatus } from '../types';
 import { formatDisplayDate, formatEstimatedMinutes, getTodayYMD } from '../utils/date';
@@ -396,16 +396,22 @@ export default function TaskDetailModal({
               <View style={styles.pillRow}>
                 {statusColumns.map((col) => {
                   const active = task.status === col.id;
+                  const st = getStatusVisual(col.id, colors, col.color);
                   return (
                     <TouchableOpacity
                       key={col.id}
                       style={[
                         styles.pill,
-                        active && { backgroundColor: `${col.color}25`, borderColor: col.color },
+                        active && { backgroundColor: `${st.color}22`, borderColor: st.color },
                       ]}
                       onPress={() => onUpdateStatus(task.id, col.id as TaskStatus)}
                     >
-                      <Text style={[styles.pillText, active && { color: colors.textPrimary }]}>
+                      <Ionicons
+                        name={st.icon}
+                        size={13}
+                        color={active ? st.color : colors.textMuted}
+                      />
+                      <Text style={[styles.pillText, active && { color: st.color }]}>
                         {col.label}
                       </Text>
                     </TouchableOpacity>

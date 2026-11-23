@@ -141,6 +141,30 @@ export const PRIORITY_COLORS: Record<
 export const DEFAULT_STATUS_COLUMNS = [
   { id: 'todo', label: 'To Do', color: '#71717a', isCompleted: false },
   { id: 'in_progress', label: 'In Progress', color: '#f59e0b', isCompleted: false },
-  { id: 'review', label: 'In Review', color: '#6366f1', isCompleted: false },
+  { id: 'review', label: 'In Review', color: '#8b5cf6', isCompleted: false },
   { id: 'completed', label: 'Completed', color: '#10b981', isCompleted: true },
 ] as const;
+
+export function getStatusVisual(
+  status: string,
+  colors: ThemePalette,
+  customColor?: string
+): { label: string; color: string; icon: 'ellipse-outline' | 'play-circle-outline' | 'eye-outline' | 'checkmark-circle' | 'layers-outline' } {
+  if (status === 'completed') {
+    return { label: 'Completed', color: customColor || colors.emerald, icon: 'checkmark-circle' };
+  }
+  if (status === 'in_progress') {
+    return { label: 'In Progress', color: customColor || colors.amber, icon: 'play-circle-outline' };
+  }
+  if (status === 'review') {
+    return { label: 'In Review', color: customColor || colors.violet, icon: 'eye-outline' };
+  }
+  if (status === 'todo') {
+    return { label: 'To Do', color: customColor || colors.textMuted, icon: 'ellipse-outline' };
+  }
+  return {
+    label: status.replace(/_/g, ' '),
+    color: customColor || colors.cyan,
+    icon: 'layers-outline',
+  };
+}
